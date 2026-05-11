@@ -1,25 +1,29 @@
 {
   "name": "dbw-base",
-  "version": "3.1.0",
-  "description": "Ultra-lightweight GeneratePress child theme by dbw media",
+  "version": "3.3.0",
+  "description": "Vinosphäre Schropp – GeneratePress child theme by dbw media",
   "type": "module",
   "scripts": {
-    "tokens": "node scripts/generate-tokens.js",
-    "predev": "node scripts/generate-tokens.js",
-    "dev": "vite",
-    "prebuild": "node scripts/generate-tokens.js",
-    "build": "vite build",
-    "build:watch": "node scripts/generate-tokens.js && vite build --watch",
-    "preview": "vite preview",
-    "blocks:build": "npm run build --prefix blocks",
-    "blocks:start": "npm run start --prefix blocks",
-    "build:all": "vite build && npm run build --prefix blocks"
+    "postinstall":         "node core/scripts/setup.js",
+    "install:all":         "npm install --prefix core/blocks && npm install --prefix blocks",
+
+    "tokens":              "node core/scripts/generate-tokens.js",
+
+    "build":               "node core/scripts/generate-tokens.js && vite build",
+    "build:core-blocks":   "node core/scripts/generate-tokens.js && npm run build --prefix core/blocks",
+    "build:theme-blocks":  "node core/scripts/generate-tokens.js && npm run build --prefix blocks",
+    "build:all":           "npm run build && npm run build:core-blocks && npm run build:theme-blocks",
+
+    "dev":                 "node core/scripts/generate-tokens.js && vite build --watch",
+    "dev:core-blocks":     "node core/scripts/generate-tokens.js && npm run start --prefix core/blocks",
+    "dev:theme-blocks":    "node core/scripts/generate-tokens.js && npm run start --prefix blocks",
+
+    "core:status":         "node core/scripts/core-status.js",
+    "core:update":         "node core/scripts/core-update.js",
+
+    "docs:blocks":         "node core/scripts/generate-blocks-table.js"
   },
-  "keywords": [
-    "wordpress",
-    "generatepress",
-    "child-theme"
-  ],
+  "keywords": ["wordpress", "generatepress", "child-theme"],
   "author": "dbw media <info@dbw-media.de>",
   "license": "GPL-2.0-or-later",
   "devDependencies": {
@@ -30,10 +34,7 @@
     "sass": "^1.83.4",
     "vite": "^6.0.11"
   },
-  "browserslist": [
-    "defaults",
-    "not IE 11"
-  ],
+  "browserslist": ["defaults", "not IE 11"],
   "dependencies": {
     "lenis": "^1.3.17"
   }

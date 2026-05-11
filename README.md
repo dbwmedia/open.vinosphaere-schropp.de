@@ -1,95 +1,364 @@
 # dbw base – GeneratePress Child Theme
 
-**Version 3.1.0** – Ultraleichtes, modernes GeneratePress Child Theme mit schlanker Architektur, Vite-Build-Pipeline und nativer Gutenberg-Block-Entwicklung.
+**Version 3.5.0** – Ultraleichtes, modernes GeneratePress Child Theme. Core als framework-agnostische Plattform, Theme als Brand-Heimat (Header, Buttons, Components), Sass-Forward-Pattern für eigene Tokens und Mixins, Token-Pipeline aus `theme.json` und 28 native Gutenberg-Blöcke.
 
 **Entwickelt von [dbw media](https://dbw-media.de)**
 
-## Schnellstart
+## Inhalt
+
+**Daily Workflow**
+- [Projekt klonen & starten](#projekt-klonen--starten)
+- [Tägliche Entwicklung](#tägliche-entwicklung)
+- [Core-Updates einspielen](#core-updates-einspielen)
+- [Theme-Assets erweitern (Override-Pattern)](#theme-assets-erweitern-override-pattern)
+
+**Reference**
+- [Voraussetzungen](#voraussetzungen)
+- [Projektstruktur](#projektstruktur)
+- [Gutenberg-Blöcke](#gutenberg-blöcke)
+- [Gutenberg-Blöcke entwickeln](#gutenberg-blöcke-entwickeln)
+- [Projektspezifische Blöcke (`theme/`)](#projektspezifische-blöcke-theme)
+- [Projektspezifische PHP-Module (`inc/`)](#projektspezifische-php-module-inc)
+- [Optionale Feature-Module](#optionale-feature-module)
+- [Design-System (Tokens, Typografie, Spacing)](#design-system-tokens-typografie-spacing)
+- [Block Editor Lockdown](#block-editor-lockdown)
+- [NPM Scripts](#npm-scripts)
+- [Drei Build-Systeme](#drei-build-systeme)
+- [Tool-Entscheidungen](#tool-entscheidungen)
+- [Asset-Handling](#asset-handling)
+- [Deployment mit SFTP](#deployment-mit-sftp)
+- [Barrierefreiheit](#barrierefreiheit)
+
+**Selten gebraucht**
+- [Änderungen am Framework selbst](#änderungen-am-framework-selbst)
+- [Neues Projekt anlegen](#neues-projekt-anlegen)
+- [Migration alter Sites](#migration-alter-sites)
+- [Changelog](#changelog)
+
+---
+
+## Projekt klonen & starten
+
+Wenn das Theme bereits für einen Kunden eingerichtet ist (Production-Stand) und du als Dev frisch dazustößt:
 
 ```bash
-# Theme-Dependencies installieren
+# --recursive zieht das Core-Submodule direkt mit. Ohne diese Flag ist /core leer.
+git clone --recursive [REPO-URL]
+cd [PROJEKT]
+
+# Dependencies + Build. Beim ersten Run zieht der Setup-Wizard zusätzlich den
+# Core auf origin/main und legt eine .vscode/sftp.json für Deployments an.
+# Brand-Farben werden NICHT mehr abgefragt, sobald sie in theme.json hinterlegt
+# sind — das passiert beim allerersten Setup einmalig (siehe „Neues Projekt
+# anlegen" weiter unten) und bleibt dann committet.
 npm install
-
-# Block-Dependencies installieren
-cd blocks && npm install && cd ..
-
-# Alles auf einmal bauen (Tokens + Theme + Blocks)
-npm run build:all
 ```
 
-Nach dem Build aktivierst du das Theme in WordPress. Das Theme wird als Child von GeneratePress erkannt.
+Falls jemand ohne `--recursive` geklont hat:
+
+```bash
+git submodule update --init --recursive
+npm install
+```
+
+---
+
+## Tägliche Entwicklung
+
+Für die aktive Entwicklung genügen zwei Terminal-Fenster:
+
+```bash
+# Terminal 1: Theme-Assets (SCSS/JS) — Vite watch
+npm run dev
+
+# Terminal 2: Projektspezifische Blöcke (theme/*) — wp-scripts watch
+npm run dev:theme-blocks
+```
+
+Beide Watch-Modi erkennen Dateiänderungen und kompilieren automatisch neu. Wenn du an Core-Blöcken arbeitest (selten, sollte primär im Core-Repo passieren — siehe „[Änderungen am Framework selbst](#änderungen-am-framework-selbst)"), gibt es zusätzlich `npm run dev:core-blocks`.
+
+### Production Build
+
+```bash
+# Alles auf einmal (Tokens + Vite + Core-Blöcke + Projekt-Blöcke)
+npm run build:all
+
+# Oder einzeln
+npm run build                  # nur Theme-Assets (+ Tokens)
+npm run build:core-blocks      # nur Core-Blöcke
+npm run build:theme-blocks     # nur Projekt-Blöcke
+```
+
+Nach jedem Build wird `theme.json` automatisch mit den ermittelten Heading-/Body-Fonts gepatcht (idempotent — schreibt nur bei tatsächlicher Änderung).
+
+---
+
+## Core-Updates einspielen
+
+Das Theme nutzt [`dbwmedia/dbw-base-core`](https://github.com/dbwmedia/dbw-base-core) als zentrales Framework-Submodule unter `/core`. Updates am Framework fließen via `npm run core:update` automatisch ein.
+
+```bash
+# Status: ist eine neue Version verfügbar?
+npm run core:status
+
+# Update in einem Schritt: fetch + rebase + Blocks bauen
+npm run core:update
+```
+
+`npm run core:update` führt automatisch aus:
+1. Sanity-Check: ist `core/` wirklich als Submodule registriert? Falls nicht (z.B. nach `cp -r`-Bootstrap), Reparatur-Anleitung statt zu pullen.
+2. `git -C core fetch origin`
+3. `blocks/package-lock.json`-Drift wird automatisch verworfen — npm rewriting des Lockfiles soll keinen manuellen Stash-Tanz triggern.
+4. `git -C core pull --rebase origin main` (deine eigenen Commits in `core/` bleiben oben drauf)
+5. `npm run build:core-blocks`
+6. Erfolgsmeldung mit Commit-Sprung (alt → neu)
+
+Danach die Änderung im Hauptprojekt committen, damit der neue Submodule-Pointer in der Theme-Historie landet:
+
+```bash
+git add core
+git commit -m "chore: update core submodule to latest"
+```
+
+---
+
+## Theme-Assets erweitern (Override-Pattern)
+
+### Wie Core und Theme zusammenspielen
+
+Der Core liefert die framework-agnostischen Defaults — Reset, Typography, Layout, Animations und die Token-Pipeline aus `theme.json`. Das Theme besitzt seine brandprägenden UI-Bausteine selbst (`components/_header.scss`, `components/_buttons.scss`) plus eigene Komponenten. Updates am Core fließen via `npm run core:update` automatisch ins Projekt; alles unter `src/` gehört dem Theme und überlebt jedes Core-Update.
+
+**SCSS:**
+```scss
+// src/scss/main.scss (Theme)
+@use '../../core/src/scss/main';     // Reset, Typography, Layout, Animations
+
+@use 'base/helper';
+@use 'components/forms';
+@use 'components/card';
+@use 'components/cookie';
+@use 'components/buttons';            // brand-individuell, lebt im Theme
+@use 'components/header';             // brand-individuell, lebt im Theme
+@use 'components/kontaktformular';    // eigene Komponenten
+```
+
+**JS:**
+```js
+// src/js/main.js (Theme)
+import '@core/src/js/main';        // Navigation, Accessibility, Scroll-* aus Core
+
+// Eigene Module darunter:
+import { initKontakt } from './components/kontaktformular.js';
+document.addEventListener('DOMContentLoaded', initKontakt);
+```
+
+**PHP:** Eigene Module unter `inc/<modulname>/` — werden automatisch geladen. Ordner mit führendem `_` (z.B. `inc/_disabled-feature/`) bleiben inaktiv.
+
+### Sass-Tokens, Breakpoints und Mixins nutzen
+
+Theme-Components greifen über die `abstracts/`-Dateien transparent auf alle Core-Werte zu. Sass-loadPath listet `src/scss/` vor `core/src/scss/`, deshalb resolved jedes `@use 'abstracts/...'` ab dem Theme — die theme-eigenen Files reichen die Core-Defaults via `@forward` durch und reservieren einen Slot für eigene Werte.
+
+**Convenience-Barrel — eine Zeile bringt alles in Scope:**
+
+```scss
+// _meine-component.scss
+@use 'abstracts' as *;
+
+.meine-component {
+  color: var(--wp--preset--color--primary, $color-primary);
+  border-radius: $button-radius;
+
+  @include respond-to('lg')  { padding: $spacing-md; }
+  @include respond-to('2xl') { padding: $spacing-lg; }
+  @include respond-to(900px) { /* theme-lokale One-off-Schwelle */ }
+
+  @include focus-visible;
+}
+```
+
+**Eigene Sass-Werte zentralisieren:** wenn mehrere Components dieselben Sass-Werte teilen, gehören sie ins Theme-Abstract (nicht in die Component selbst):
+
+```scss
+// src/scss/abstracts/_variables.scss — unter dem @forward
+$header-blur:     18px;
+$shadow-card-hover: 0 12px 40px rgba($color-dark-grey, 0.08);
+
+// src/scss/abstracts/_breakpoints.scss — unter dem @forward
+$bp-hero-stack: 900px;
+
+// src/scss/abstracts/_mixins.scss — unter dem @forward
+@mixin glass-blur { backdrop-filter: blur($header-blur); }
+```
+
+**Brand-Tokens** (Farben, Spacing, Fonts, globale Breakpoints) gehören weiter in `theme.json` und `core/breakpoints.json`. Auto-Gen läuft via `npm run tokens` und produziert die `$color-*` / `$spacing-*` / `$font-*` / `$bp-*` Variablen.
+
+### Header und Buttons re-skinnen
+
+Beide Komponenten arbeiten gegen CSS-Custom-Properties — eine Re-Skin-Aktion bedeutet meist nur ein paar Vars im `:root` setzen, kein Selektor-Duplikat:
+
+```scss
+// src/scss/components/_header.scss (Theme oder Customer)
+:root {
+  --header-bg:                rgba(250, 250, 250, 0.88);
+  --header-text:              #000;
+  --header-backdrop-filter:   blur(16px);
+  --header-shadow:            0 1px 0 rgba(0, 0, 0, 0.08);
+  --header-cta-bg:            var(--wp--preset--color--accent, #{$color-accent});
+  --header-cta-text:          #{$color-white};
+}
+```
+
+Slideout-Menü, Close-Button und last-item-CTA konsumieren dieselben Vars und folgen automatisch.
+
+### Neue JS-Komponente
+
+```bash
+touch src/js/components/mein-modul.js
+```
+
+```js
+// mein-modul.js
+export function initMeinModul() {
+  // …
+}
+```
+
+```js
+// src/js/main.js – nach dem Core-Import:
+import '@core/src/js/main';
+import { initMeinModul } from './components/mein-modul.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+  initMeinModul();
+});
+```
+
+---
+
+## Voraussetzungen
+
+| Requirement   | Version   | Hinweis                                                       |
+| ------------- | --------- | ------------------------------------------------------------- |
+| WordPress     | **≥ 6.6** | `theme.json` nutzt Keys ab WP 6.1–6.6 (Details: CHANGELOG.md) |
+| GeneratePress | ≥ 3.4     | Als Parent Theme aktiv                                        |
+| Node.js       | ≥ 20 LTS  |                                                               |
+| PHP           | ≥ 8.1     |                                                               |
+
+---
 
 ## Projektstruktur
 
 ```
-dbw-base/
+dbw-base-theme/
 ├── theme.json                 # Design-Tokens: Farben, Spacing (Single Source of Truth)
-├── blocks/                    # Gutenberg-Blöcke (eigenes npm-Projekt)
+│
+├── core/                      # ← Git-Submodule (dbw-media) – NICHT ANFASSEN
+│   ├── blocks/                #   Gemeinsame Gutenberg-Blöcke (dbw-base/*)
+│   ├── inc/                   #   Framework-PHP (Loader, Assets, Settings, theme-blocks-loader …)
+│   ├── src/                   #   Framework-Defaults
+│   │   ├── scss/              #     Reset, Typography, Layout, Animations
+│   │   │   ├── abstracts/     #     Tokens (auto-gen), Mixins, Type-Scale, Breakpoints
+│   │   │   ├── base/          #     reset, typography, layout
+│   │   │   ├── components/    #     animations
+│   │   │   └── main.scss      #     Entry – wird vom Theme-main.scss eingebunden
+│   │   └── js/                #     Navigation, Accessibility, ScrollHeader, Smooth-Scroll, …
+│   ├── scripts/               #   Build- und Setup-Scripts (setup, tokens, core-update, docs:blocks)
+│   └── breakpoints.json       #   SSOT für Breakpoints (xs / sm / md / lg / xl / 2xl / 3xl)
+│
+├── blocks/                    # ← Projektspezifische Blöcke (theme/*)
 │   ├── src/                   #   Block-Quelldateien
-│   │   ├── _tokens.scss       #   Auto-generiert aus theme.json (nicht editieren!)
-│   │   ├── _spacing.scss      #   Zentrale Spacing-Mixins (section-padding)
-│   │   ├── hero/              #   Hero-Block (statisch, save.js)
-│   │   ├── section/           #   Section-Wrapper (dynamisch, render.php)
-│   │   ├── cards/             #   Card Grid – Parent
-│   │   ├── card-item/         #   Card Grid – Child
-│   │   ├── split-content/     #   50/50 Bild/Text Layout
-│   │   ├── usp-list/          #   USP Icon-List – Parent
-│   │   ├── usp-item/          #   USP Icon-List – Child (mit SVG-Upload)
-│   │   ├── stat-counter/      #   Animierter Zahlen-Counter
-│   │   ├── accordion/         #   Accordion – Parent
-│   │   ├── accordion-item/    #   Accordion – Child
-│   │   ├── logo-grid/         #   Partner-Logo-Grid
-│   │   └── cta-banner/        #   CTA-Conversion-Banner
+│   │   └── blog-teaser/       #   Beispiel-Block (Referenz-Implementierung)
 │   ├── build/                 #   Kompilierte Blöcke (generiert)
-│   └── package.json           #   @wordpress/scripts Dependencies
+│   ├── package.json           #   @wordpress/scripts Dependencies
+│   └── ARCHITECTURE.md        #   ← Pflichtlektüre vor jedem neuen Block
+│
 ├── build/                     # Kompilierte Theme-Assets (generiert)
-├── src/                       # Theme-Quelldateien
-│   ├── scss/                  #   Styles (SCSS)
-│   │   ├── abstracts/
-│   │   │   ├── _tokens.scss   #     Auto-generiert aus theme.json (nicht manuell editieren!)
-│   │   │   ├── _variables.scss#     Semantic Aliases, Spacing, Breakpoints, Transitions
-│   │   │   └── _mixins.scss   #     Responsive, Focus, Reduced Motion
-│   │   ├── base/              #     Reset, Typography, Layout
-│   │   ├── components/        #     Component-Styles
-│   │   └── main.scss          #     Haupt-Entry-Point
-│   └── js/                    #   JavaScript
-│       ├── components/        #     JS-Module
-│       └── main.js            #     Haupt-Entry-Point
-├── scripts/
-│   └── generate-tokens.js     # Generiert _tokens.scss für Theme UND Blocks (Farben + Spacing)
-├── inc/                       # PHP-Includes
-│   ├── assets.php             #   Vite-Manifest Asset-Loading
-│   ├── blocks.php             #   Block-Registrierung (auto-discovery)
-│   ├── svg-support.php        #   SVG-Upload-Support
-│   ├── login-customization.php#   Login-Seite Anpassungen
-│   ├── gp-settings.php        #   GeneratePress-Integration
-│   └── dbw/                   #   dbw media Module
+├── src/                       # Projekt-Quelldateien (alles, was projektspezifisch ist)
+│   ├── scss/
+│   │   ├── abstracts/_variables.scss    # @forward Core + Slot für eigene Sass-Vars
+│   │   ├── abstracts/_breakpoints.scss  # @forward Core + Slot für theme-lokale BPs
+│   │   ├── abstracts/_mixins.scss       # @forward Core + Slot für eigene Mixins
+│   │   ├── abstracts/_index.scss        # Barrel: @use 'abstracts' as *; lädt alle drei
+│   │   ├── base/_helper.scss            # Utility-Klassen (Stub – frei zu befüllen)
+│   │   ├── components/_buttons.scss     # Brand-Buttons (theme-eigen, nicht im Core)
+│   │   ├── components/_header.scss      # Brand-Header (theme-eigen, CSS-Vars-driven)
+│   │   ├── components/_card.scss        # Stub für Karten-Stile
+│   │   ├── components/_cookie.scss      # Stub für Cookie-Banner
+│   │   ├── components/_forms.scss       # Stub für Formular-Styles
+│   │   └── main.scss                    # @use core/main + eigene Imports darunter
+│   └── js/
+│       ├── components/            # Eigene JS-Module (leer für neue Projekte)
+│       └── main.js                # import @core/src/js/main + eigene Imports darunter
+│
+├── inc/                       # Theme-spezifische PHP-Module (kein Core-Code)
+│   └── _custom-module-example/  # Vorlage – Ordner mit führendem _ ist deaktiviert
+│
 ├── functions.php              # Theme-Setup
 ├── style.css                  # Theme-Header (kein eigentliches CSS)
 ├── package.json               # Vite + Convenience-Scripts
 └── vite.config.js             # Vite-Konfiguration
 ```
 
+## Projektspezifische PHP-Module (`inc/`)
+
+Jeder Unterordner in `inc/` ist ein eigenständiges Modul (CPTs, Taxonomien, Hooks, …) und wird automatisch geladen.
+
+**Konvention:**
+- Aktive Module: `inc/<modulname>/` → werden vom Loader in `functions.php` automatisch eingebunden.
+- Deaktivierte Vorlagen: `inc/_<modulname>/` → werden ignoriert (führender Unterstrich = Vorlage ohne Side-Effects). Nutze das, um Templates zu pflegen, ohne sie produktiv zu schalten.
+- Template-Dateien (`single-*.php`) werden NICHT per glob geladen — sie werden via `template_include`-Filter in `functions.php` geroutet.
+
+**Beispiel — Vorlage zum aktiven Modul machen:**
+```bash
+cp -r inc/_custom-module-example inc/jobs
+# Funktionspräfix in den PHP-Files anpassen (dbw_example_ → dbw_jobs_)
+# Slugs / Labels an das neue Feature anpassen
+```
+
 ## Gutenberg-Blöcke
 
-Das Theme enthält 12 eigene Gutenberg-Blöcke in der Kategorie **"dbw base Blocks"**. Alle neuen Blöcke (ab 3.1.0) nutzen `render.php` (dynamisch, serverseitig gerendert) statt `save.js` -- das macht sie **unkaputtbar**: Änderungen am Markup erfordern keine Block-Recovery im Editor.
+Das Theme enthält aktuell 28 eigene Gutenberg-Blöcke + 1 RichText-Format-Typ (Highlight Pill) in der Kategorie **"dbw base Blocks"**. Alle neuen Blöcke (ab 3.1.0) nutzen `render.php` (dynamisch, serverseitig gerendert) statt `save.js` -- das macht sie **unkaputtbar**: Änderungen am Markup erfordern keine Block-Recovery im Editor.
 
 ### Block-Katalog
 
-| Block                 | Name                      | Typ               | Beschreibung                                                                                                                     |
-| --------------------- | ------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| **Hero**              | `dbw-base/hero`           | Statisch          | Vollwertiger Hero-Bereich mit Headline, Subtext, Dual-Buttons, Hintergrundbild mit Overlay, Scroll-Indikator, 3 Layout-Varianten |
-| **Section**           | `dbw-base/section`        | Dynamisch         | Äußerer Container/Wrapper mit Padding, Hintergrundfarbe (aus theme.json), optionalem Background-Image mit Overlay                |
-| **Card Grid**         | `dbw-base/cards`          | Dynamisch, Parent | Grid-Container für Karten, Spaltenanzahl 2/3/4, responsive Breakpoints                                                           |
-| **Card**              | `dbw-base/card-item`      | Dynamisch, Child  | Einzelne Karte mit Bild, H3-Heading, Text und optionalem Link                                                                    |
-| **Split-Content**     | `dbw-base/split-content`  | Dynamisch         | 50/50 Bild/Text Layout, Seiten per Toolbar umschaltbar                                                                           |
-| **USP Icon-List**     | `dbw-base/usp-list`       | Dynamisch, Parent | Grid-Container für USP-Punkte, Spaltenanzahl 2/3/4                                                                               |
-| **USP-Punkt**         | `dbw-base/usp-item`       | Dynamisch, Child  | Einzelner USP mit Icon (eigenes SVG oder vordefiniert), Titel und Text                                                           |
-| **Stat-Counter**      | `dbw-base/stat-counter`   | Dynamisch         | Animierter Zahlen-Counter mit Prefix/Suffix, IntersectionObserver, `de-DE` Formatierung                                          |
-| **Accordion**         | `dbw-base/accordion`      | Dynamisch, Parent | FAQ-Accordion Container mit nur-ein-Panel-offen-Logik                                                                            |
-| **Accordion-Eintrag** | `dbw-base/accordion-item` | Dynamisch, Child  | Einzelne Frage/Antwort mit animiertem Toggle, ARIA-Attribute                                                                     |
-| **Logo-Grid**         | `dbw-base/logo-grid`      | Dynamisch         | Partner-Logo-Grid mit Graustufen-Filter und Hover-Farbeffekt                                                                     |
-| **CTA-Banner**        | `dbw-base/cta-banner`     | Dynamisch         | High-Attention Conversion-Banner, Varianten: Primary/Dark                                                                        |
+> Die folgende Tabelle wird automatisch aus `core/blocks/build/*/block.json` generiert. Aktualisieren mit `npm run docs:blocks` (nach `npm run build:core-blocks`).
+
+<!-- BLOCKS:START -->
+_Auto-generiert via `npm run docs:blocks`. Quelle: core/blocks/build/*/block.json._
+
+| Block | Name | Typ | Beschreibung |
+| --- | --- | --- | --- |
+| **Accordion** | `dbw-base/accordion` | Dynamisch, Parent (mit view.js) | FAQ-Accordion mit animierten Frage-/Antwort-Paaren. |
+| **Accordion-Eintrag** | `dbw-base/accordion-item` | Dynamisch, Child | Einzelne Frage/Antwort für das Accordion. |
+| **Bento Card** | `dbw-base/bento-card` | Dynamisch, Child (mit view.js) | Einzelne Karte im Bento Grid. Breite (1–4 Spalten), Höhe (1–2 Zeilen) und Hintergrundfarbe wählbar. |
+| **Bento Grid** | `dbw-base/bento-grid` | Dynamisch | Asymmetrisches Karten-Grid im Material Design 3 Bento-Stil. Enthält Bento-Karten in variablen Breiten und Höhen. |
+| **Card Carousel** | `dbw-base/card-carousel` | Dynamisch (mit view.js) | Horizontal scrollender Karten-Karussell im Apple-Stil. Karten beginnen an der Content-Breite und scrollen über den Viewport hinaus. |
+| **Card** | `dbw-base/card-item` | Dynamisch, Child (mit view.js) | Einzelne Karte mit Bild, Überschrift, Text und optionalem Link. |
+| **Card Grid** | `dbw-base/cards` | Dynamisch | Grid-Container für Karten. Steuert Spaltenanzahl (2, 3 oder 4). |
+| **Bewerber-Quiz (intern)** | `dbw-base/career-quiz` | Dynamisch (mit view.js) | Internes Asset-Bundle für Alpine.js auf Job-Seiten. Das eigentliche Bewerber-Modal wird automatisch im Job-Template gerendert; konfiguriert über Jobs → Quiz-Konfiguration. |
+| **Carousel Card** | `dbw-base/carousel-card` | Dynamisch, Child (mit view.js) | Einzelne Karte im Card Carousel. Drei Typen: Feature (Bild + Text), Media (Vollbild-Bild), Color (Farbiger Hintergrund). |
+| **CTA-Banner** | `dbw-base/cta-banner` | Dynamisch | High-Attention Conversion-Banner mit Headline und Call-to-Action Button. |
+| **Events** | `dbw-base/events` | Dynamisch | Chronologische Event-Liste als Kacheln mit Datum, Titel und Uhrzeit. |
+| **Footer Info** | `dbw-base/footer-info` | Dynamisch | Flexibler Footer-/Info-Block mit Logo, Firmeninformationen, Öffnungszeiten, rechtlichen Links und Scroll-to-Top. |
+| **Hero** | `dbw-base/hero` | Dynamisch | Moderner Hero-Bereich mit Überschrift, Text, Buttons und optionalem Hintergrundbild/-video. |
+| **Job-Liste** | `dbw-base/jobs-loop` | Dynamisch (mit view.js) | Zeigt alle veröffentlichten Stellenangebote automatisch als Kacheln. |
+| **Logo-Grid** | `dbw-base/logo-grid` | Dynamisch | Partner-Logo-Grid mit automatischem Graustufen-Filter und Hover-Effekt. |
+| **Scroll Scale Section** | `dbw-base/scroll-scale-section` | Dynamisch (mit view.js) | Section mit Scroll-Animation: Expand öffnet sich von Karte zu Fullwidth, Contain zieht sich zu einer Karte zusammen. Animation läuft über native CSS scroll-driven animations mit IO-Fallback. |
+| **Scrolly Card** | `dbw-base/scrolly-card` | Dynamisch, Child | Content-Card im Scrolly Framework. Definiere eine SVG-ID – wenn diese Card in den Viewport scrollt, wird das passende SVG-Element hervorgehoben. |
+| **Scrolly Framework** | `dbw-base/scrolly-framework` | Dynamisch (mit view.js) | Scrollytelling-Container: Sticky SVG links, scrollende Content-Cards rechts. SVG-Elemente werden bei aktivem Card über IDs hervorgehoben. |
+| **Section** | `dbw-base/section` | Dynamisch | Äußerer Container für Sektionen mit Padding, Hintergrundfarbe und optionalem Background-Image. |
+| **Split-Content** | `dbw-base/split-content` | Dynamisch | 50/50 Layout mit Bild und Text. Ideal für Storytelling-Sektionen. |
+| **Split Content Dynamisch (Beta)** | `dbw-base/split-content-dynamic` | Dynamisch | Split-Content mit dynamischen Datenquellen (ACF, Post-Meta, Beitragstitel …). Beta – nur für Entwicklung. |
+| **Stat-Counter** | `dbw-base/stat-counter` | Dynamisch (mit view.js) | Animierter Zahlen-Counter mit Label für Trust-Sektionen. |
+| **Stats Grid** | `dbw-base/stats-grid` | Dynamisch | Kennzahlen-Grid im Apple-Tech-Specs-Stil. Flach, typografisch, mit trennenden Linien. |
+| **Sticky Media Scroll** | `dbw-base/sticky-media-scroll` | Dynamisch | Scrollytelling in zwei Modi: Sticky oder Overlay. Mit optionaler Sektion-Überschrift, Sticky-Bild am Container (Option B) und Sektion-CTA. |
+| **Sticky Panel** | `dbw-base/sticky-panel` | Dynamisch, Child | Einzelnes Panel für Sticky Media Scroll. Drei Content-Typen: text, text-media, media-overlay. Card-Styling via Karten-Stil-Panel. |
+| **Ticker / Banderole** | `dbw-base/ticker` | Dynamisch | Endlos laufende Textzeile (Marquee). Wörter oder kurze Phrasen scrollen gleichmäßig durch. |
+| **USP-Punkt** | `dbw-base/usp-item` | Dynamisch, Child | Einzelner USP-Punkt mit vordefiniertem Icon, Titel und Text. |
+| **USP Icon-List** | `dbw-base/usp-list` | Dynamisch | Liste von Verkaufsargumenten mit vordefinierten Icons. |
+<!-- BLOCKS:END -->
+
+> **Highlight Pill** (`dbw-base/highlight-pill`) ist kein Block, sondern ein **RichText-Format-Typ** – er erscheint in der Inline-Toolbar wenn Text markiert wird und erzeugt ein `<mark class="dbw-highlight-pill">` Pill-Element.
 
 ### Parent/Child-Blöcke
 
@@ -98,6 +367,8 @@ Einige Blöcke nutzen ein **Parent/Child-Pattern** mit `InnerBlocks`:
 - **Cards**: `cards` (Parent) → `card-item` (Child)
 - **USP Icon-List**: `usp-list` (Parent) → `usp-item` (Child)
 - **Accordion**: `accordion` (Parent) → `accordion-item` (Child)
+- **Bento-Grid**: `bento-grid` (Parent) → `bento-card` (Child)
+- **Sticky Media Scroll**: `sticky-media-scroll` (Parent) → `sticky-panel` (Child)
 
 Child-Blöcke können nur innerhalb ihres Parent-Blocks eingefügt werden (`"parent"` in `block.json`). Der Parent beschränkt `allowedBlocks` auf den zugehörigen Child-Typ.
 
@@ -118,227 +389,352 @@ Zwei Blöcke laden zusätzliches Frontend-JavaScript:
 - **Stat-Counter**: `IntersectionObserver`-basierte Count-Up-Animation mit Ease-Out-Cubic, `de-DE`-Formatierung, respektiert `prefers-reduced-motion`
 - **Accordion**: Toggle-Logik (nur ein Panel offen), `max-height`-Animation, ARIA-State-Management
 
-## Spacing-System
+---
 
-Ab Version 3.1.0 gibt es ein zentrales Spacing-System, das in `theme.json` definiert wird und allen Blöcken zur Verfügung steht.
+## Projektspezifische Blöcke (`theme/`)
 
-### Spacing-Presets
+Neben den Core-Blöcken gibt es einen zweiten Block-Layer im Verzeichnis `blocks/` für kundenspezifische Blöcke. Diese sind vollständig vom Core getrennt und werden pro Projekt entwickelt.
 
-| Preset     | Slug | Wert                         | Verwendung               |
-| ---------- | ---- | ---------------------------- | ------------------------ |
-| Klein (S)  | `s`  | `clamp(1.5rem, 4vw, 2.5rem)` | Kompakte Sektionen       |
-| Mittel (M) | `m`  | `clamp(3rem, 6vw, 5rem)`     | Standard-Sektionsabstand |
-| Groß (L)   | `l`  | `clamp(5rem, 10vw, 8rem)`    | Große Abstände, z.B. CTA |
+### Warum zwei Block-Layer?
 
-### Wie es funktioniert
+|                           | Core-Blöcke (`core/blocks/`)           | Projekt-Blöcke (`blocks/`)            |
+| ------------------------- | -------------------------------------- | ------------------------------------- |
+| **Namespace**             | `dbw-base/*`                           | `theme/*`                             |
+| **Kategorie im Inserter** | „dbw base Blocks"                      | `DBW_CLIENT_NAME` + „ Blocks"         |
+| **Geteilt von**           | Allen dbw-Projekten                    | Nur diesem Projekt                    |
+| **Typische Inhalte**      | Hero, Section, CTA, Cards, Accordion … | Blog, Jobs, Kontakt, Referenzen …     |
+| **Core anfassen?**        | Nein – ist ein Git-Submodule           | —                                     |
 
-1. **`theme.json`** definiert die Spacing-Presets unter `settings.spacing.spacingSizes`
-2. **WordPress** generiert CSS Custom Properties: `--wp--preset--spacing--s`, `--wp--preset--spacing--m`, `--wp--preset--spacing--l`
-3. **`generate-tokens.js`** erzeugt SCSS-Fallback-Variablen in `_tokens.scss`
-4. **`_spacing.scss`** stellt ein zentrales Mixin `section-padding` bereit
-5. **Jeder Sektions-Block** importiert das Mixin und bietet im Editor ein Dropdown "Vertikaler Abstand" (S/M/L)
+### Kundennamen konfigurieren
 
-### Im Editor
+In `functions.php` den Kundennamen eintragen – er erscheint dann im Gutenberg-Inserter als Kategorietitel:
 
-Alle Sektions-Level-Blöcke (Section, Cards, Split-Content, USP-List, Accordion, Logo-Grid, CTA-Banner) haben in den InspectorControls ein **SelectControl** für "Vertikaler Abstand" mit den drei Optionen. Der gewählte Wert wird als CSS-Klasse `is-padding-s`, `is-padding-m` oder `is-padding-l` ausgegeben.
-
-### Im SCSS verwenden
-
-```scss
-@use '../spacing' as sp;
-
-.wp-block-dbw-base-mein-block {
-  @include sp.section-padding;
-}
+```php
+// functions.php
+define( 'DBW_CLIENT_NAME', 'Mein Projekt' );
+// → Inserter zeigt: "Mein Projekt Blocks"
 ```
 
-## Custom SVG-Upload (USP-Punkte)
-
-Der USP-Punkt-Block (`dbw-base/usp-item`) unterstützt zwei Icon-Modi:
-
-1. **Eigenes SVG hochladen** (Priorität): Über die MediaUpload-Komponente im Inspector kann ein beliebiges SVG/Bild hochgeladen werden. Es wird ohne Hintergrund-Tint in voller Größe dargestellt.
-2. **Vordefiniertes Icon** (Fallback): Wenn kein eigenes Icon gesetzt ist, kann aus 6 vordefinierten Line-Icons gewählt werden: Haken, Stern, Rakete, Herz, Schild, Blitz.
-
-SVG-Uploads werden durch `inc/svg-support.php` ermöglicht.
-
-## Design-Tokens: Farben und Spacing
-
-### Wichtig: `theme.json` ist die einzige Stelle, an der Farben und Spacing definiert werden.
-
-Farben und Spacing werden **nur in `theme.json`** gepflegt. Alles andere wird automatisch daraus generiert:
-
-```
-theme.json                              ← Hier editierst du Farben + Spacing
-    │
-    ├──→ WordPress                      ← generiert CSS Custom Properties
-    │    (--wp--preset--color--primary, --wp--preset--spacing--m, etc.)
-    │
-    └──→ npm run tokens (automatisch bei jedem Build)
-         │
-         ├──→ src/scss/abstracts/_tokens.scss   ← für Theme-SCSS (Vite)
-         │        │
-         │        └──→ _variables.scss          ← importiert Tokens, definiert Aliase
-         │
-         └──→ blocks/src/_tokens.scss           ← für Block-SCSS (wp-scripts)
-                  │
-                  ├──→ hero/style.scss etc.     ← @use '../tokens' as t;
-                  └──→ _spacing.scss            ← Fallback-Werte für Spacing
-```
-
-### Farbe ändern oder hinzufügen
-
-1. **`theme.json`** anpassen (unter `settings.color.palette`):
-
-```json
-{
-  "name": "Primär (Brand)",
-  "slug": "primary",
-  "color": "#526983"
-}
-```
-
-2. **Build starten** -- Tokens werden automatisch regeneriert:
+### Neuen Block anlegen
 
 ```bash
-npm run build
+# 1. Verzeichnis anlegen
+mkdir blocks/src/mein-block
+
+# 2. Pflichtdateien anlegen (blocks/src/blog-teaser/ als Vorlage)
+touch blocks/src/mein-block/block.json
+touch blocks/src/mein-block/index.js
+touch blocks/src/mein-block/edit.js
+touch blocks/src/mein-block/render.php
+touch blocks/src/mein-block/style.scss
+touch blocks/src/mein-block/editor.scss
+
+# 3. Einmalig bauen
+npm run build:theme-blocks
+
+# → Block erscheint danach automatisch im Inserter unter "[Kundenname] Blocks"
 ```
 
-Fertig. Der Build-Prozess liest `theme.json`, generiert beide `_tokens.scss` (Theme + Blocks) und kompiliert dann SCSS. Du musst nichts doppelt pflegen.
-
-### Spacing ändern oder hinzufügen
-
-1. **`theme.json`** anpassen (unter `settings.spacing.spacingSizes`):
-
-```json
-{
-  "name": "Mittel (M)",
-  "slug": "m",
-  "size": "clamp(3rem, 6vw, 5rem)"
-}
-```
-
-2. **Build starten** -- SCSS-Token und CSS Custom Property werden automatisch aktualisiert.
-
-### Manuell Tokens generieren (ohne Build)
+Im Watch-Modus:
 
 ```bash
-npm run tokens
+npm run dev:theme-blocks
 ```
 
-### Wie die Token-Dateien zusammenhängen
+Kein manuelles Eintragen in PHP nötig – `core/inc/theme-blocks-loader.php` erkennt alle
+gebauten Blöcke unter `blocks/build/*/block.json` automatisch.
 
-Das Script generiert **zwei Dateien** aus `theme.json`:
+### Konventionen
 
-**`src/scss/abstracts/_tokens.scss`** (Theme, auto-generiert):
+- **Namespace:** `theme/block-name` (beim Start eines neuen Projekts durch den Kundennamen ersetzen)
+- **Kategorie:** `theme-blocks` (Slug, Anzeigename kommt aus `DBW_CLIENT_NAME`)
+- **CSS-Klasse:** `.wp-block-theme-block-name` (generiert WordPress automatisch)
+- **Textdomain:** `dbw-base`
+- **SCSS-Imports:** Shared Partials aus dem Core über relativen Pfad – **nie kopieren**
 
-```scss
-// Auto-generated from theme.json – DO NOT EDIT MANUALLY
-// Colors
-$color-primary: #526983;
-$color-secondary: #333333;
-$color-base-bg: #f9f8f6;
-$color-dark-grey: #1a1a1a;
-// Spacing
-$spacing-s: clamp(1.5rem, 4vw, 2.5rem);
-$spacing-m: clamp(3rem, 6vw, 5rem);
-$spacing-l: clamp(5rem, 10vw, 8rem);
+### Vollständige Referenz
+
+Alle Konventionen, SCSS-Imports, `block.json`-Regeln und die Entwicklungs-Checkliste:
+
+**[blocks/ARCHITECTURE.md](blocks/ARCHITECTURE.md)**
+
+### Vorhandene Projekt-Blöcke
+
+| Block           | Name               | Beschreibung                                                              |
+| --------------- | ------------------ | ------------------------------------------------------------------------- |
+| **Blog Teaser** | `theme/blog-teaser`| Neueste Blogbeiträge als Teaser-Karten (WP_Query, konfigurierbare Spalten/Anzahl) |
+
+---
+
+## Optionale Feature-Module
+
+Der Core enthält Feature-Module, die standardmäßig **deaktiviert** sind und nur bei Bedarf eingeschaltet werden. Das Aktivieren/Deaktivieren läuft ausschließlich über PHP-Konstanten in `functions.php` — vor dem Core-Loader definieren.
+
+### Career Module
+
+Vollständiges Karriere-System: Custom Post Type `jobs`, Schema.org-Ausgabe für Google Jobs und ein interaktiver Bewerbungswizard als Gutenberg-Block.
+
+#### Aktivieren / Deaktivieren
+
+**Appearance → dbw Einstellungen → Feature-Module** → Toggle „Career Module" umlegen → Speichern.
+
+Beim ersten Aktivieren werden die Rewrite Rules automatisch geflusht — der `/jobs/`-Slug ist sofort verfügbar.
+
+> **Programmatisches Override** (z.B. für Staging): `define('ENABLE_CAREER_MODULE', true)` in `functions.php` vor dem Core-Loader. Überschreibt den Settings-Toggle.
+
+#### Nach der Aktivierung (einmalig)
+
+```bash
+# 1. Alpine.js installieren (nur beim ersten Mal nach dem Clone)
+cd core/blocks && npm install
+
+# 2. Core-Blöcke neu bauen (registriert den career-quiz Block)
+npm run build:core-blocks   # aus dem Theme-Root ausführen
+
+# 3. WordPress: Permalinks flushen
+# Admin → Einstellungen → Permalinks → Speichern
+# (registriert den /jobs/-Slug des CPT)
 ```
 
-**`blocks/src/_tokens.scss`** (Blocks, auto-generiert):
+#### Was das Modul liefert
 
-```scss
-// Auto-generated from theme.json – DO NOT EDIT MANUALLY
-// Colors
-$primary: #526983;
-$secondary: #333333;
-$base-bg: #f9f8f6;
-$dark-grey: #1a1a1a;
-// Spacing
-$spacing-s: clamp(1.5rem, 4vw, 2.5rem);
-$spacing-m: clamp(3rem, 6vw, 5rem);
-$spacing-l: clamp(5rem, 10vw, 8rem);
+| Komponente | Beschreibung |
+|---|---|
+| CPT `jobs` | Eigener Post-Type mit Archiv (`/jobs/`), indexierbar, im Menü unter „Jobs" |
+| Schema.org JSON-LD | `JobPosting` automatisch im `<head>` jeder Stellen-Seite — für **Google for Jobs** Rich Results |
+| Gutenberg Sidebar | Panel „Job Details (SEO)" auf jedem Job-Post: Standort, Beschäftigungsart, Remote, Gehaltsspanne, Abteilung, Bewerbungsfrist |
+| Block `dbw-base/career-quiz` | Interaktives Bewerbungsmodal — direkt auf der Job-Single-Page platzieren |
+| REST Endpoint | `POST /wp-json/dbw/v1/apply` — validiert, schützt vor Spam, verschickt zwei HTML-Mails |
+
+#### Bewerber-Quiz Block im Editor
+
+Den Block auf der Job-Seite platzieren (Inserter → „dbw base Blocks" → „Bewerber-Quiz"). In den InspectorControls lassen sich konfigurieren:
+
+- **Trigger-Button** – Beschriftung und Stil (Primary / Secondary / Ghost)
+- **Schritt 1 – Benefits** – Beliebig viele Benefit-Karten (Icon aus [Material Symbols](https://fonts.google.com/icons) + Text)
+- **Schritt 2 – Verfügbarkeit** – Antwort-Optionen frei konfigurierbar
+- **Schritt 3 – Kontakt** – Überschrift, Unterzeile, Datenschutz-Text
+- **Erfolgsmeldung** – Titel und Text nach erfolgreichem Absenden
+
+#### E-Mail-Empfänger
+
+Die Bewerbungsmail geht an die **WordPress-Admin-E-Mail** (`Einstellungen → Allgemein`). Beim Kunden einfach dort die gewünschte Empfängeradresse eintragen.
+
+#### Schema.org Pflichtfelder für Google Jobs
+
+Damit Google die Stelle als Rich Result ausspielt, müssen auf jedem Job-Post mindestens folgende Felder ausgefüllt sein:
+
+| Feld | Wo eintragen |
+|---|---|
+| Titel der Stelle | Post-Titel |
+| Stellenbeschreibung | Post-Inhalt oder Auszug |
+| Standort | Sidebar-Panel „Job Details (SEO)" → Standort |
+| Beschäftigungsart | Sidebar-Panel → Beschäftigungsart |
+
+Optionale aber empfehlenswerte Felder: Gehaltsspanne, Bewerbungsfrist, Remote-Option, Abteilung.
+
+---
+
+## Design-System (Tokens, Typografie, Spacing)
+
+`theme.json` ist die einzige Stelle, an der **Farben** und **Section-Spacing** gepflegt werden. Alles andere — SCSS-Variablen, CSS-Custom-Properties, Editor-Picker — wird automatisch daraus generiert.
+
+```
+theme.json                                                 ← Farben + Spacing-Presets
+   ├── WordPress  →  --wp--preset--color--*  / --wp--preset--spacing--*
+   └── npm run tokens  →  abstracts/_tokens.scss + blocks/_tokens.scss
+                          → $color-primary, $spacing-m, …
 ```
 
-**`_variables.scss`** (manuell, hier editierst du Aliase, Breakpoints):
+Token-Generator läuft idempotent vor jedem `npm run build`.
+
+### Token-Übersicht
+
+| Kategorie | Quelle | Zugriff |
+| --- | --- | --- |
+| Farben | `theme.json` `palette` | `$color-*` / `var(--wp--preset--color--*)` |
+| Section-Spacing (S/M/L) | `theme.json` `spacingSizes` | `$spacing-s/m/l` / `var(--wp--preset--spacing--*)` |
+| Component-Spacing (8pt) | Core `_variables.scss` | `$spacing-xs/sm/md/lg/xl/2xl/3xl/4xl` / `var(--space-*)` |
+| Font-Sizes (fluid) | Core `_type-scale.scss` | `$fs-h1/.../sm` / `var(--fs-*)` |
+| Line-Heights / Letter-Spacing | Core `_type-scale.scss` | `$lh-*`, `$ls-*` / `var(--lh-*)`, `var(--ls-*)` |
+| Breakpoints | `core/breakpoints.json` | `$bp-xs/sm/md/lg/xl/2xl/3xl` / `respond-to('lg')` |
+
+Die `_type-scale.scss`-Werte erscheinen zusätzlich in `theme.json` `fontSizes` (für den Editor-Picker). Beide müssen bei Skalierungs-Änderungen synchron gehalten werden — Auto-Sync ist im Backlog.
+
+### Typografie-Skala
+
+Fluid Skalierung zwischen 360px und 1440px Viewport (Major Third, ~1.25 ratio):
+
+| Token | Mobile → Desktop |
+| --- | --- |
+| `$fs-sm` / `--fs-sm` | 12 → 14px |
+| `$fs-base` / `--fs-base` | 14 → 18px (Body) |
+| `$fs-h6` / `--fs-h6` | 16 → 20px |
+| `$fs-h5` / `--fs-h5` | 18 → 24px |
+| `$fs-h4` / `--fs-h4` | 22 → 30px |
+| `$fs-h3` / `--fs-h3` | 26 → 38px |
+| `$fs-h2` / `--fs-h2` | 32 → 48px |
+| `$fs-h1` / `--fs-h1` | 40 → 64px |
+
+Line-Heights: `$lh-body` 1.7 (Fließtext), `$lh-heading` 1.15 (h3-h6), `$lh-large` 1.05 (h1-h2).
+Letter-Spacing: `$ls-large` -0.025em, `$ls-heading` -0.01em, `$ls-ui` 0.025em.
+
+> Heading-Farbe wird ausschließlich über `theme.json` (`styles.elements.heading.color`) gesetzt — vermeidet Spezifitätskonflikte mit GeneratePress.
+
+### Spacing-Ebenen
+
+**Section-Spacing** (Block-Padding, drei Presets aus `theme.json`):
+
+| Preset | Slug | Wert |
+| --- | --- | --- |
+| Klein (S) | `s` | `clamp(1.5rem, 4vw, 2.5rem)` |
+| Mittel (M) | `m` | `clamp(3rem, 6vw, 5rem)` |
+| Groß (L) | `l` | `clamp(5rem, 10vw, 8rem)` |
+
+Sektions-Blöcke kriegen automatisch ein „Vertikaler Abstand"-Dropdown im Editor (rendert als `is-padding-s/m/l`). In Block-SCSS via `@use '../spacing' as sp; @include sp.section-padding;`.
+
+**Component-Spacing** (8pt-Grid für Abstände innerhalb von Komponenten):
+
+| SCSS | CSS Var | Wert |
+| --- | --- | --- |
+| `$spacing-sm` | `--space-1` | 8px |
+| `$spacing-md` | `--space-2` | 16px |
+| `$spacing-lg` | `--space-3` | 24px |
+| `$spacing-xl` | `--space-4` | 32px |
+| `$spacing-2xl` | `--space-6` | 48px |
+| `$spacing-3xl` | `--space-8` | 64px |
+| `$spacing-4xl` | `--space-12` | 96px |
+
+### Im Code verwenden
 
 ```scss
-@forward 'tokens';
-@use 'tokens' as *;
-
-// Semantische Aliase
-$color-text: $color-dark-grey;
-$color-background: $color-base-bg;
-$color-focus: $color-primary;
-
-// Breakpoints, Transitions...
-```
-
-### Farben im SCSS verwenden
-
-**In Theme-SCSS** (`src/scss/`) -- CSS Custom Property + SCSS-Token als Fallback:
-
-```scss
-@use '../abstracts/variables' as *;
+@use 'abstracts' as *;   // Theme: bringt $color-*, $spacing-*, $fs-*, $bp-*, respond-to(), focus-visible
 
 .mein-element {
   color: var(--wp--preset--color--primary, $color-primary);
-  background: var(--wp--preset--color--base-bg, $color-background);
+  font-size: var(--fs-h2);
+  padding: var(--space-3);
+  gap: $spacing-md;
+
+  @include respond-to('lg') { padding: $spacing-xl; }
+  @include focus-visible;
 }
 ```
 
-**In Block-SCSS** (`blocks/src/`) -- CSS Custom Property + Token als Fallback:
+Block-SCSS (eigener wp-scripts-Build) nutzt den lokalen Tokens-Pfad: `@use '../tokens' as t;` und greift per `t.$color-primary` zu.
 
-```scss
-@use '../tokens' as t;
+### Werte ändern
 
-.wp-block-dbw-base-mein-block {
-  color: var(--wp--preset--color--dark-grey, t.$dark-grey);
-  background: var(--wp--preset--color--primary, t.$primary);
-  font-family: var(--gp-heading-font-family, inherit);
-}
-```
+1. `theme.json` editieren (Farben unter `settings.color.palette`, Spacing unter `settings.spacing.spacingSizes`)
+2. `npm run build` (oder `npm run tokens`, wenn nur die Token-Files frisch sollen)
 
-### Warum dieses System?
+Beide `_tokens.scss` (Theme + Blocks) werden idempotent regeneriert — kein manuelles Sync.
 
-- **Eine Quelle**: Farben und Spacing leben nur in `theme.json`, kein manuelles Sync
-- **WordPress-nativ**: `theme.json` steuert den Block-Editor, Farbpalette, globale Styles
-- **Automatisch**: Beide `_tokens.scss` (Theme + Blocks) werden bei jedem Build neu generiert (`prebuild`-Hook)
-- **Fallback-sicher**: SCSS-Werte dienen als Fallback, falls CSS Custom Properties fehlen
+---
 
-## Zwei Build-Systeme
+## Custom SVG-Upload (USP-Punkte)
 
-Das Theme nutzt zwei unabhängige Build-Prozesse, die parallel und konfliktfrei laufen:
+Der USP-Punkt-Block (`dbw-base/usp-item`) hat zwei Icon-Modi:
+- **Eigenes SVG** über MediaUpload im Inspector (Priorität, ohne Hintergrund-Tint)
+- **Vordefiniertes Line-Icon** als Fallback (Haken / Stern / Rakete / Herz / Schild / Blitz)
 
-|                   | Theme-Assets           | Gutenberg-Blöcke             |
-| ----------------- | ---------------------- | ---------------------------- |
-| **Tool**          | Vite                   | @wordpress/scripts (webpack) |
-| **Verzeichnis**   | Root (`/`)             | `blocks/`                    |
-| **Source**        | `src/scss/`, `src/js/` | `blocks/src/*/`              |
-| **Output**        | `build/`               | `blocks/build/*/`            |
-| **Konfiguration** | `vite.config.js`       | Automatisch via `wp-scripts` |
-| **Dev-Befehl**    | `npm run build:watch`  | `npm run blocks:start`       |
-| **Build-Befehl**  | `npm run build`        | `npm run blocks:build`       |
+SVG-Uploads sind via `core/inc/svg-support.php` aktiviert.
 
-**Warum zwei Systeme?** Gutenberg-Blöcke brauchen `@wordpress/scripts` (webpack) mit JSX-Support, WordPress-Dependencies und `block.json`-Verarbeitung. Vite kann das nicht ohne aufwändige Konfiguration. Beide Systeme haben eigene `node_modules` und stören sich nicht gegenseitig.
+---
+
+## Block-Animationen deaktivieren
+
+Jeder Block kann aus den Scroll-Animationen herausgenommen werden — ohne Code, direkt im Editor:
+
+**Block markieren → Seitenleiste → Erweitert → „Zusätzliche CSS-Klasse" → `no-anim` eintragen.**
+
+Funktioniert auch auf Drittanbieter- und Core-Blöcken.
+
+---
+
+## Block Editor Lockdown
+
+Das Theme schränkt den Gutenberg-Editor gezielt ein, damit Kunden nicht aus dem Design-System ausbrechen können. Alle Einschränkungen sind in `theme.json` definiert.
+
+### Was ist gesperrt und warum
+
+| Einschränkung                  | theme.json-Key                       | Grund                                 |
+| ------------------------------ | ------------------------------------ | ------------------------------------- |
+| Keine freien Farben            | `color.custom: false`                | Nur die 5 Brand-Farben erlaubt        |
+| Keine Custom-Gradienten        | `color.customGradient: false`        | Nicht im Design-System                |
+| WP-Standardfarben entfernt     | `color.defaultPalette: false`        | Verhindert WP-Blau, -Indigo, etc.     |
+| WP-Standardgradienten entfernt | `color.defaultGradients: false`      | —                                     |
+| Keine freie Schriftgröße       | `typography.customFontSize: false`   | Nur die 8 Type-Scale-Größen           |
+| WP-Standardgrößen entfernt     | `typography.defaultFontSizes: false` | Verhindert WP's Small/Medium/Large/XL |
+| Kein custom Zeilenabstand      | `typography.lineHeight: false`       | SCSS kontrolliert das präzise         |
+| Kein custom Buchstabenabstand  | `typography.letterSpacing: false`    | SCSS kontrolliert das präzise         |
+| Keine Drop Caps                | `typography.dropCap: false`          | Nicht im Design-System                |
+| Kein Fließtext-Modus           | `typography.writingMode: false`      | Vertikaler Text nicht vorgesehen      |
+| Keine Custom-Fonts             | `typography.customFontFamily: false` | System-UI Stack ist fest              |
+| Kein freier Abstand            | `spacing.customSpacingSize: false`   | Nur S / M / L                         |
+| WP-Standardabstände entfernt   | `spacing.defaultSpacingSizes: false` | Entfernt WP's px-Presets              |
+
+### Was Kunden weiterhin können
+
+- Text **fett** oder _kursiv_ formatieren, Links setzen
+- Aus **5 Brand-Farben** wählen: Primär, Sekundär, Hintergrund, Dunkelgrau, Weiß
+- Aus **8 Schriftgrößen** wählen: Klein (12–14px) bis H1 (40–64px), alle fluid
+- Block-Padding aus **3 Spacing-Stufen** wählen: S / M / L
+- Blöcke als Normal / Wide / Full Width ausrichten
+- Alle `dbw-base/*` Custom Blocks mit ihren eigenen Einstellungen nutzen
+
+### Customizer-Einschränkung
+
+Der GP-Customizer-Bereich „Globale Farben" ist über `gp-settings.php` entfernt (`remove_section('generate_global_colors_section')`). Farbänderungen laufen ausschließlich über `theme.json` → `npm run tokens`.
+
+### Editor-Vorschau vs. Frontend
+
+Das **Theme-Stylesheet** (`build/css/style.*.css`) wird bewusst **nicht** in den Editor injected. Der Editor nutzt die `styles`-Definitionen aus `theme.json` als Vorschau (hardcoded Werte, keine CSS Custom Properties). Leichte visuelle Abweichungen zwischen Editor und Frontend sind möglich, inhaltlich sind sie identisch.
+
+Block-spezifische Styles (`core/blocks/build/<block>/style-index.css`), Material Symbols und der Highlight-Pill-CSS werden jedoch über `add_editor_style()` in den Editor-Canvas geladen, damit Blocks im Editor möglichst nah am Frontend aussehen.
+
+---
+
+## Drei Build-Systeme
+
+Das Theme nutzt drei unabhängige Build-Prozesse, die parallel und konfliktfrei laufen:
+
+|                   | Theme-Assets           | Core-Blöcke                       | Projekt-Blöcke                     |
+| ----------------- | ---------------------- | --------------------------------- | ---------------------------------- |
+| **Tool**          | Vite                   | @wordpress/scripts (webpack)      | @wordpress/scripts (webpack)       |
+| **Verzeichnis**   | Root (`/`)             | `core/blocks/`                    | `blocks/`                          |
+| **Source**        | `src/scss/`, `src/js/` | `core/blocks/src/*/`              | `blocks/src/*/`                    |
+| **Output**        | `build/`               | `core/blocks/build/*/`            | `blocks/build/*/`                  |
+| **Konfiguration** | `vite.config.js`       | Automatisch via `wp-scripts`      | Automatisch via `wp-scripts`       |
+| **Dev-Befehl**    | `npm run dev`          | `npm run dev:core-blocks`         | `npm run dev:theme-blocks`         |
+| **Build-Befehl**  | `npm run build`        | `npm run build:core-blocks`       | `npm run build:theme-blocks`       |
+
+**Warum getrennte Systeme?** Gutenberg-Blöcke brauchen `@wordpress/scripts` (webpack) mit JSX-Support, WordPress-Dependencies und `block.json`-Verarbeitung. Core- und Projekt-Blöcke sind bewusst getrennt: der Core ist ein Git-Submodule und darf nicht verändert werden. Beide Block-Systeme haben eigene `node_modules` und stören sich nicht gegenseitig.
 
 ## NPM Scripts
 
+Einheitliches Schema **`<scope>:<target>`**. Alle Build- und Dev-Scripts triggern den Token-Generator vorher automatisch — `npm run tokens` muss nie separat aufgerufen werden.
+
 ### Root-Scripts (Theme)
 
-| Script                 | Beschreibung                                                 |
-| ---------------------- | ------------------------------------------------------------ |
-| `npm run tokens`       | Generiert `_tokens.scss` aus `theme.json` (Farben + Spacing) |
-| `npm run dev`          | Vite Dev-Server (generiert vorher Tokens)                    |
-| `npm run build`        | Production-Build (generiert vorher Tokens)                   |
-| `npm run build:watch`  | Watch-Modus (generiert vorher Tokens)                        |
-| `npm run preview`      | Vite Preview-Server                                          |
-| `npm run blocks:build` | Production-Build der Blöcke                                  |
-| `npm run blocks:start` | Watch-Modus für Blöcke                                       |
-| `npm run build:all`    | Alles bauen: Tokens + Vite + Blocks                          |
+| Script                      | Wann                        | Beschreibung                                                        |
+| --------------------------- | --------------------------- | ------------------------------------------------------------------- |
+| `npm run install:all`       | Einmalig nach Clone         | Installiert Deps für `core/blocks` + `blocks`                       |
+| `npm run build:all`         | Einmalig + nach Reset       | Alles bauen: Tokens + Vite + Core-Blöcke + Projekt-Blöcke           |
+| **Build (einzeln)**         |                             |                                                                     |
+| `npm run build`             | Nach Theme-SCSS/JS-Edits    | Theme-Assets via Vite (+ Tokens)                                    |
+| `npm run build:core-blocks` | Nach Core-Update            | Core-Blöcke (+ Tokens)                                              |
+| `npm run build:theme-blocks`| Nach Theme-Block-Edits      | Projektspezifische Blöcke (+ Tokens)                                |
+| **Watch-Modi (Dev)**        |                             |                                                                     |
+| `npm run dev`               | Theme-Entwicklung           | Vite im Watch-Modus für SCSS/JS                                     |
+| `npm run dev:core-blocks`   | Block-Entwicklung im Core   | wp-scripts watch für `core/blocks/`                                 |
+| `npm run dev:theme-blocks`  | Projekt-Block-Entwicklung   | wp-scripts watch für `blocks/`                                      |
+| **Tokens & Core**           |                             |                                                                     |
+| `npm run tokens`            | Manuell (selten nötig)      | Tokens aus `theme.json` + `core/breakpoints.json` neu generieren    |
+| `npm run core:status`       | Vor `core:update`           | Zeigt, ob neue Core-Commits auf origin/main warten                  |
+| `npm run core:update`       | Wenn `core:status` warnt    | Core-Submodule auf neuesten Stand ziehen + Blocks neu bauen         |
 
-Die Befehle `dev`, `build` und `build:watch` generieren automatisch die Design-Tokens aus `theme.json` bevor sie starten. Du musst `npm run tokens` nie separat aufrufen, es sei denn du willst nur die Tokens ohne Build aktualisieren.
-
-### Block-Scripts (in `blocks/`)
+### Block-Scripts (in `blocks/` und `core/blocks/`)
 
 | Script                    | Beschreibung                     |
 | ------------------------- | -------------------------------- |
@@ -346,268 +742,115 @@ Die Befehle `dev`, `build` und `build:watch` generieren automatisch die Design-T
 | `npm run start`           | Watch-Modus mit Live-Rebuild     |
 | `npm run packages-update` | WordPress-Packages aktualisieren |
 
-## Entwicklung
-
-### Ersteinrichtung
-
-```bash
-# 1. Repository klonen
-git clone <repo-url> && cd dbw-base
-
-# 2. Theme-Dependencies
-npm install
-
-# 3. Block-Dependencies
-cd blocks && npm install && cd ..
-
-# 4. Einmal alles bauen
-npm run build:all
-```
-
-### Tägliche Entwicklung
-
-Für die aktive Entwicklung empfehlen sich zwei Terminal-Fenster:
-
-```bash
-# Terminal 1: Theme-Assets (SCSS/JS)
-npm run build:watch
-
-# Terminal 2: Gutenberg-Blöcke
-npm run blocks:start
-```
-
-Beide Watch-Modi erkennen Dateiänderungen und kompilieren automatisch neu.
-
-### Production Build
-
-```bash
-# Alles auf einmal
-npm run build:all
-
-# Oder einzeln
-npm run build           # nur Theme-Assets (+ Tokens)
-npm run blocks:build    # nur Blöcke
-```
+> Die Sub-Package-Scripts ruft man normalerweise nicht direkt auf – die Root-Scripts (`build:core-blocks`, `dev:core-blocks` etc.) wrappen sie und stellen die Tokens vorher sicher.
 
 ## Gutenberg-Blöcke entwickeln
 
-### Neuen Block erstellen
+> **Tiefer Einstieg:** [`core/blocks/ARCHITECTURE.md`](./core/blocks/ARCHITECTURE.md) ist Pflichtlektüre vor jedem neuen Block — beschreibt Parent/Child-Pattern, semantisches HTML, view.js-Konventionen, Auto-Discovery und alle Anti-Patterns. Hier nur der Quickstart.
 
-Jeder Block lebt in einem eigenen Unterordner von `blocks/src/`. Die Ordner-Struktur bestimmt den Build-Output automatisch.
-
-1. **Ordner anlegen:**
+### Quickstart: neuen Block anlegen
 
 ```bash
 mkdir blocks/src/mein-block
+cd blocks/src/mein-block
 ```
 
-2. **block.json erstellen** -- Block-Metadaten:
-
-```json
-{
-  "$schema": "https://schemas.wp.org/trunk/block.json",
-  "apiVersion": 3,
-  "name": "dbw-base/mein-block",
-  "version": "3.1.0",
-  "title": "Mein Block",
-  "category": "dbw-base",
-  "icon": "editor-code",
-  "description": "Beschreibung des Blocks.",
-  "textdomain": "dbw-base",
-  "supports": {
-    "html": false,
-    "anchor": true
-  },
-  "attributes": {
-    "heading": {
-      "type": "string",
-      "default": ""
-    },
-    "paddingSize": {
-      "type": "string",
-      "default": "m",
-      "enum": ["s", "m", "l"]
-    }
-  },
-  "editorScript": "file:./index.js",
-  "editorStyle": "file:./index.css",
-  "style": "file:./style-index.css",
-  "render": "file:./render.php"
-}
-```
-
-3. **index.js erstellen** -- Entry Point:
+Pflicht-Files: `block.json` (Metadaten + Attribute), `index.js` (Registrierung), `edit.js` (Editor-View), `render.php` (Frontend, server-seitig). Optional: `style.scss`, `editor.scss`, `view.js` (Frontend-JS, z.B. Alpine-Hooks).
 
 ```javascript
+// index.js
 import { registerBlockType } from '@wordpress/blocks';
 import metadata from './block.json';
 import Edit from './edit';
 import './style.scss';
-import './editor.scss';
 
 registerBlockType(metadata.name, {
   edit: Edit,
-  save: () => null, // dynamischer Block: render.php übernimmt
+  save: () => null,    // dynamischer Block — render.php übernimmt
 });
 ```
 
-4. **edit.js erstellen** -- Editor-Ansicht:
-
-```javascript
-import { __ } from '@wordpress/i18n';
-import {
-  useBlockProps,
-  RichText,
-  InspectorControls,
-} from '@wordpress/block-editor';
-import { PanelBody, SelectControl } from '@wordpress/components';
-
-export default function Edit({ attributes, setAttributes }) {
-  const { heading, paddingSize } = attributes;
-  const blockProps = useBlockProps({ className: `is-padding-${paddingSize}` });
-
-  return (
-    <>
-      <InspectorControls>
-        <PanelBody title={__('Darstellung', 'dbw-base')}>
-          <SelectControl
-            label={__('Vertikaler Abstand', 'dbw-base')}
-            value={paddingSize}
-            options={[
-              { label: 'S', value: 's' },
-              { label: 'M', value: 'm' },
-              { label: 'L', value: 'l' },
-            ]}
-            onChange={(value) => setAttributes({ paddingSize: value })}
-          />
-        </PanelBody>
-      </InspectorControls>
-      <section {...blockProps}>
-        <RichText
-          tagName="h2"
-          value={heading}
-          onChange={(value) => setAttributes({ heading: value })}
-          placeholder={__('Überschrift…', 'dbw-base')}
-        />
-      </section>
-    </>
-  );
-}
-```
-
-5. **render.php erstellen** -- Server-seitiges Rendering:
-
-```php
-<?php
-$heading      = $attributes['heading'] ?? '';
-$padding_size = $attributes['paddingSize'] ?? 'm';
-
-$classes = [ 'wp-block-dbw-base-mein-block' ];
-$classes[] = 'is-padding-' . $padding_size;
-
-$wrapper_attributes = get_block_wrapper_attributes( [
-  'class' => implode( ' ', $classes ),
-] );
-?>
-
-<section <?php echo $wrapper_attributes; ?>>
-  <?php if ( $heading ) : ?>
-    <h2><?php echo wp_kses_post( $heading ); ?></h2>
-  <?php endif; ?>
-</section>
-```
-
-6. **style.scss** erstellen:
-
 ```scss
+// style.scss
 @use '../tokens' as t;
 @use '../spacing' as sp;
 
 .wp-block-dbw-base-mein-block {
   @include sp.section-padding;
-  // weitere Styles...
+  // …
 }
 ```
 
-7. **Bauen:**
-
-```bash
-npm run blocks:build
-```
-
-Fertig. PHP registriert den Block automatisch via `inc/blocks.php`. Der Block erscheint im Editor unter der Kategorie "dbw base Blocks".
+Build: `npm run build:core-blocks` (oder `npm run dev:core-blocks` zum Watchen). PHP registriert den Block automatisch via `core/inc/blocks.php` — neuer Ordner unter `blocks/src/` + Build = Block verfügbar.
 
 ### Konventionen
 
-- **Namespace:** `dbw-base/block-name` (in `block.json` -> `name`)
-- **Kategorie:** `dbw-base` (eigene Kategorie im Block-Inserter)
-- **CSS-Klasse:** `.wp-block-dbw-base-block-name` (generiert WordPress automatisch)
-- **BEM-Elemente:** `.wp-block-dbw-base-block-name__element`
-- **GP-Variablen nutzen:** Immer mit Fallback, z.B. `color: var(--wp--preset--color--primary, t.$primary)`
-- **Textdomain:** `dbw-base` (für Übersetzungen mit `__()`)
-- **HTML:** Semantische Tags (`<section>`, `<article>`) statt generischer `<div>`
-- **Rendering:** `render.php` (dynamisch) für neue Blöcke, `save.js` nur für den Hero-Block (Legacy)
+- **Namespace:** `dbw-base/<block-name>` in `block.json` → `name`
+- **Kategorie:** `dbw-base` (eigener Block-Inserter-Bereich)
+- **CSS-Klasse:** `.wp-block-dbw-base-<block-name>` (von WordPress generiert), BEM-Elemente: `__element`
+- **Tokens:** immer mit Fallback, z.B. `color: var(--wp--preset--color--primary, t.$color-primary)`
+- **Rendering:** `render.php` (dynamisch) — `save.js` nur für den Legacy-Hero-Block
 
-### Block-Dateien im Detail
+Detail-Pattern (Parent/Child, Editor-Lockdown, view.js-Hooks, Padding-Mixin etc.) → [`core/blocks/ARCHITECTURE.md`](./core/blocks/ARCHITECTURE.md).
 
-| Datei         | Zweck                                  | Pflicht?               |
-| ------------- | -------------------------------------- | ---------------------- |
-| `block.json`  | Metadaten, Attribute, Supports         | Ja                     |
-| `index.js`    | Registrierung, importiert alles andere | Ja                     |
-| `edit.js`     | Was im Editor angezeigt wird           | Ja                     |
-| `render.php`  | Serverseitiges Frontend-Rendering      | Ja (dynamische Blöcke) |
-| `save.js`     | Statisches Frontend-Rendering          | Nur Hero (Legacy)      |
-| `view.js`     | Frontend-JavaScript (z.B. Animationen) | Optional               |
-| `style.scss`  | Styles für Frontend UND Editor         | Optional               |
-| `editor.scss` | Styles NUR im Editor                   | Optional               |
+## Änderungen am Framework selbst
 
-### Auto-Discovery
+Nur relevant für Framework-Maintainer. Änderungen an Core-Defaults (Blocks, PHP-Includes, SCSS-Abstracts) müssen **im `/core`-Ordner** committet und gepusht werden — nicht im Theme-Repo:
 
-Die PHP-Registrierung in `inc/blocks.php` scannt automatisch `blocks/build/*/block.json`. Du musst nirgends manuell einen Block registrieren. Neuer Ordner in `blocks/src/` + Build = Block verfügbar.
+```bash
+cd core
+# Änderungen vornehmen ...
+git add -A
+git commit -m "feat: ..."
+git push origin main
+cd ..
 
-## Theme-Assets erweitern
-
-### Neue SCSS Partials hinzufügen
-
-1. Erstelle eine neue Datei in `src/scss/components/_mein-component.scss`
-2. Importiere sie in `src/scss/main.scss`:
-
-```scss
-@use 'components/mein-component';
+# Submodule-Pointer im Theme/Customer aktualisieren:
+git add core
+git commit -m "chore(core): bump submodule"
+git push
 ```
 
-3. Nutze Variablen und Mixins:
+Der Customer-Run von `npm run core:update` zieht den Bump dann automatisch.
 
-```scss
-@use '../abstracts/variables' as *;
-@use '../abstracts/mixins' as *;
+---
 
-.mein-component {
-  color: var(--wp--preset--color--primary, $color-primary);
-  @include focus-visible;
-}
+## Neues Projekt anlegen
+
+Einmal pro Customer. Voraussetzung: leeres Repo auf GitHub
+(`https://github.com/dbwmedia/<customer-name>`).
+
+```bash
+# 1. Theme inkl. Core-Submodule unter dem Customer-Namen klonen.
+#    --recursive registriert core/ direkt als Submodule.
+git clone --recursive https://github.com/dbwmedia/dbw-base-theme.git <customer-name>
+cd <customer-name>
+
+# 2. Origin auf das leere Customer-Repo umstellen + initialer Push.
+#    Das Theme-Repo bleibt nirgendwo verlinkt — alles ab hier gehört dem Customer.
+git remote set-url origin https://github.com/dbwmedia/<customer-name>.git
+git push -u origin main
+
+# 3. Setup-Wizard + Build in einem Schritt.
+#    npm install zieht den Core auf origin/main, fragt einmal nach Kundenname /
+#    Brand-Farben / SFTP, schreibt theme.json + functions.php + .vscode/sftp.json
+#    und triggert install:all + build:all. Marker in theme.json sorgt dafür,
+#    dass Folge-Devs nach `git pull` nicht mehr nach Farben gefragt werden.
+npm install
 ```
 
-### Neue JavaScript Komponenten hinzufügen
+> **Anti-Pattern:** Niemals `cp -r` + `git init` zum Klonen — dadurch landet
+> `core/` als regulärer Tracked-Ordner statt als Submodule, und der Core friert
+> dauerhaft ein. `npm run core:update` erkennt diesen Zustand und liefert eine
+> Reparatur-Anleitung, falls es doch mal passiert.
 
-1. Erstelle eine neue Datei in `src/js/components/mein-modul.js`
-2. Exportiere eine Funktion:
+---
 
-```javascript
-export function initMeinModul() {
-  // Deine Logik
-}
-```
+## Migration alter Sites
 
-3. Importiere und initialisiere in `src/js/main.js`:
+Migrations-Anleitungen für ältere Theme-Versionen (3.2 → 3.3 etc.) liegen in [`MIGRATION.md`](./MIGRATION.md). Aktuelle Customer-Sites brauchen den Inhalt nicht.
 
-```javascript
-import { initMeinModul } from './components/mein-modul.js';
-
-document.addEventListener('DOMContentLoaded', () => {
-  initMeinModul();
-});
-```
+---
 
 ## Deployment mit SFTP
 
@@ -671,7 +914,7 @@ Das Theme ist barrierefrei konzipiert:
 Das Theme nutzt Vites Manifest für intelligentes Asset-Loading:
 
 1. Vite erzeugt `build/.vite/manifest.json` mit Hash-Dateinamen
-2. PHP liest das Manifest in `inc/assets.php`
+2. PHP liest das Manifest in `core/inc/assets.php`
 3. WordPress enqueued automatisch die korrekten Dateien
 4. Browser-Caching funktioniert perfekt (Hash ändert sich bei Änderungen)
 
@@ -681,58 +924,18 @@ Fehlt ein Build-Verzeichnis (z.B. nach Git-Clone ohne Build), wird ein Fehler in
 
 ## Changelog
 
-### 3.1.0
+Aktuelle Version: **3.5.0**. Vollständige Commit-Historie über `git log` —
+größere Meilensteine in Kurzform:
 
-Vollständige Block-Bibliothek, zentrales Spacing-System und semantisches HTML.
-
-- **11 neue Gutenberg-Blöcke**: Section, Card Grid (Parent/Child), Split-Content, USP Icon-List (Parent/Child), Stat-Counter, Accordion (Parent/Child), Logo-Grid, CTA-Banner
-- **Dynamisches Rendering**: Alle neuen Blöcke nutzen `render.php` statt `save.js` -- unkaputtbar, keine Block-Recovery nötig
-- **Zentrales Spacing-System**: 3 Presets (S/M/L) in `theme.json`, CSS Custom Properties, shared `_spacing.scss` Mixin, pro Block im Editor wählbar
-- **Token-Pipeline erweitert**: `generate-tokens.js` generiert jetzt auch Spacing-Tokens aus `theme.json`
-- **Semantisches HTML**: `<section>`, `<article>`, `<button>` statt generischer `<div>`-Container
-- **Custom SVG-Upload**: USP-Punkte unterstützen eigene SVG-Icons via MediaUpload (Priorität vor vordefinierten Icons)
-- **Parent/Child-Pattern**: Cards, USP-List und Accordion nutzen InnerBlocks mit strenger Typ-Beschränkung
-- **Frontend-Interaktivität**: Stat-Counter (IntersectionObserver, Ease-Out-Animation) und Accordion (Toggle, ARIA) mit `view.js`
-- **Barrierefreiheit**: ARIA-Attribute, `prefers-reduced-motion`, Keyboard-Support, semantische Landmarken
-- **`_spacing.scss`**: Neues zentrales Mixin für konsistentes Section-Padding aller Blöcke
-
-### 3.0.0
-
-Gutenberg-Block-Entwicklung nativ im Theme. Design-Token-System.
-
-- **Design-Token-Pipeline**: `theme.json` als Single Source of Truth, automatische Generierung von `_tokens.scss` via `scripts/generate-tokens.js`
-- Eigenständiger Build-Prozess mit `@wordpress/scripts` (webpack) im `blocks/`-Verzeichnis
-- Zweites npm-Projekt in `blocks/` -- koexistiert konfliktfrei mit dem Root-Vite-Setup
-- PHP Auto-Discovery: `inc/blocks.php` registriert alle Blöcke automatisch via `glob()`
-- Eigene Block-Kategorie "dbw base Blocks" im Inserter
-- Hero-Block (`dbw-base/hero`): Vollwertiger Hero-Bereich mit Headline, Subtext, Dual-Buttons, Hintergrundbild mit Overlay, Scroll-Indikator, 3 Layout-Varianten, GP CSS-Variablen, responsive clamp()-Sizing und `prefers-reduced-motion`
-- Convenience-Scripts im Root: `tokens`, `blocks:build`, `blocks:start`, `build:all`
-- Automatische Token-Generierung als `prebuild`/`predev`-Hook
-- SFTP-Watcher erweitert auf `blocks/build/`
-- Versionierung auf 3.0.0 (style.css, functions.php, package.json)
-
-### 2.x
-
-Vite-basierter Build-Workflow und Theme-Infrastruktur.
-
-- Vite als Build-Tool mit SCSS/JS-Pipeline und Manifest-basiertem Asset-Loading
-- Modulare PHP-Architektur (`inc/assets.php`, `inc/svg-support.php`, `inc/login-customization.php`)
-- Login-Seite Customization und Branding
-- SVG-Upload-Support
-- Security-Hardening (`inc/dbw/login-security.php`, `inc/dbw/html-comment.php`)
-- Barrierefreiheit: Skip-Link, Focus-Visible, semantische Landmarken
-- VS Code SFTP-Integration mit Auto-Upload
-- ESLint, Prettier, EditorConfig
-- PostCSS mit Autoprefixer
-
-### 1.x
-
-Grundgerüst als GeneratePress Child Theme.
-
-- Basis-Setup mit `style.css` Theme-Header und `functions.php`
-- GeneratePress als Parent Theme
-- Grundlegende Theme-Supports (HTML5, Feed-Links)
-- Text Domain und Übersetzungsbereitschaft
+- **3.5.0** – Theme als Brand-Heimat: `_header.scss` und `_buttons.scss` aus dem Core ins Theme verlagert, Header-/Buttons-Re-Skin via CSS-Custom-Properties (`--header-bg`/`--header-cta-bg`/...) statt Selektor-Duplikate. Sass-Forward-Pattern in `src/scss/abstracts/` für eigene Variablen, Breakpoints und Mixins inkl. Convenience-Barrel `@use 'abstracts' as *`. Breakpoint-Skala um `xs` / `2xl` / `3xl` erweitert; `respond-to()` akzeptiert jetzt rohe Pixel-Werte für one-off-Schwellen. Setup-Wizard idempotent (theme.json-Marker), Auto-Pull des Core-Submoduls bei `npm install` einer frischen Customer-Site, `core:update` mit Submodule-Sanity-Check und automatisches Verwerfen von npm-Lockfile-Drift.
+- **3.3.x** – Theme-as-Wrapper: Framework-Defaults (Reset, Typography, Layout, Animations, Setup-Wizard, Theme-Blocks-Loader) zentral im Core; Theme bindet via `@use '../../core/src/scss/main'` ein, eigene Komponenten/Overrides darüber. `vite.config.js` als Factory `createCoreConfig()`, Token-Naming einheitlich, Breakpoints SSOT in `core/breakpoints.json`, NPM-Scripts vereinheitlicht.
+- **3.2.x** – Production-readiness: Token-Naming einheitlich (`$color-*`/`$spacing-*`/`$font-*`/`$bp-*`), Breakpoints SSOT in `core/breakpoints.json`, Customer-Brand-Leaks aus dem Core entfernt, NPM-Scripts vereinheitlicht (`build:*`, `dev:*`), Path-Helpers (`dbw_core_path`/`dbw_core_uri`), Block-Tabellen-Generator (`docs:blocks`), Loader-Konvention (`inc/_*` = deaktiviert).
+- **3.2.0** – Zwei-Block-Layer-Architektur: `blocks/` als projektspezifischer Layer neben Core-Blöcken, `DBW_CLIENT_NAME`-Konstante, Auto-Discovery für Theme-Blöcke.
+- **3.1.x** – Design System & Editor Hardening: Fluid Type Scale, 8pt Spacing Grid, vollständiger Editor-Lockdown, WCAG 1.4.4 (`html { font-size: 100% }`).
+- **3.1.0** – Vollständige Block-Bibliothek (Section, Cards, USP, Accordion, Stat-Counter, Logo-Grid, CTA-Banner) auf `render.php`-Basis (unkaputtbar), zentrales Spacing-System, Custom SVG-Uploads.
+- **3.0.0** – Gutenberg-Block-Entwicklung nativ im Theme. Design-Token-Pipeline aus `theme.json`. Hero-Block.
+- **2.x** – Vite-Build-Workflow, modulare PHP-Architektur, Login-Customization, SVG-Support.
+- **1.x** – Grundgerüst als GeneratePress Child Theme.
 
 ## dbw media
 

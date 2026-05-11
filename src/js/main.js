@@ -1,17 +1,12 @@
 /**
- * Main JavaScript Entry Point
- * dbw base - GeneratePress Child Theme
- * https://dbw-media.de
+ * Theme-JS-Entry
+ *
+ * Delegiert komplett an das Core-Framework. Initialisiert Navigation,
+ * Accessibility, Scroll-Header, optional Smooth-Scroll und Scroll-Animations
+ * – gesteuert via window.dbwSettings (siehe dbw-Einstellungen im wp-admin).
+ *
+ * Projekt-spezifische Komponenten gehören in eigene Dateien hier in
+ * src/js/components/ und werden separat darunter importiert.
  */
 
-import { initNavigation } from './components/navigation.js';
-import { initAccessibility } from './components/accessibility.js';
-import { initScrollHeader } from './components/scrollHeader.js';
-import { initSmoothScroll } from './components/smoothScroll.js';
-
-document.addEventListener('DOMContentLoaded', () => {
-  initNavigation();
-  initAccessibility();
-  initScrollHeader();
-  initSmoothScroll();
-});
+import '@core/src/js/main.js';

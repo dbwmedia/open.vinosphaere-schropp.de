@@ -17,14 +17,34 @@
           "color": "#333333"
         },
         {
+          "name": "Akzent",
+          "slug": "accent",
+          "color": "#526983"
+        },
+        {
+          "name": "Highlight",
+          "slug": "highlight",
+          "color": "#333333"
+        },
+        {
           "name": "Hintergrund",
           "slug": "base-bg",
+          "color": "#f9f8f6"
+        },
+        {
+          "name": "Body Background",
+          "slug": "body-bg",
           "color": "#f9f8f6"
         },
         {
           "name": "Dunkelgrau",
           "slug": "dark-grey",
           "color": "#1a1a1a"
+        },
+        {
+          "name": "Weiß",
+          "slug": "white",
+          "color": "#ffffff"
         }
       ]
     },
@@ -54,6 +74,11 @@
     "layout": {
       "contentSize": "800px",
       "wideSize": "1200px"
+    },
+    "custom": {
+      "dbw": {
+        "colorsConfigured": true
+      }
     }
   },
   "styles": {
