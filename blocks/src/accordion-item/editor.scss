@@ -1,0 +1,17 @@
+/**
+ * Accordion Item Block – Editor Styles
+ *
+ * @package dbw-base
+ */
+
+.wp-block-dbw-base-accordion-item {
+	// In editor, always show content area for editing
+	.wp-block-dbw-base-accordion-item__content.is-editor-preview {
+		max-height: none;
+		overflow: visible;
+		padding-bottom: 0.5rem;
+		border-left: 3px solid rgba(0, 0, 0, 0.08);
+		padding-left: 1rem;
+		margin-top: 0.25rem;
+	}
+}

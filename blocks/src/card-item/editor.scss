@@ -1,0 +1,30 @@
+/**
+ * Card Item Block – Editor Styles
+ *
+ * @package dbw-base
+ */
+
+.wp-block-dbw-base-card-item {
+	// Image placeholder in editor
+	&__image-placeholder {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		aspect-ratio: 16 / 10;
+		background-color: #f0f0f0;
+		border: 2px dashed #ccc;
+		cursor: pointer;
+		font-size: 0.85rem;
+		color: #666;
+		transition: border-color 0.2s ease;
+
+		&:hover {
+			border-color: #999;
+		}
+	}
+
+	// Link preview in editor (not clickable)
+	.wp-block-dbw-base-card-item__link {
+		pointer-events: none;
+	}
+}

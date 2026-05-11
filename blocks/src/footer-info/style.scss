@@ -1,0 +1,406 @@
+/**
+ * Footer Info Block – Frontend Styles
+ * @package dbw-base
+ */
+
+@use '../tokens' as t;
+@use '../spacing' as sp;
+
+.wp-block-dbw-base-footer-info {
+	@include sp.section-padding;
+
+	// Custom text color (CSS variable set as inline style on the wrapper)
+	color: var(--fi-text, inherit);
+
+	// Background color variants (matches section block pattern)
+	&.has-bg-base-bg   { background-color: var(--wp--preset--color--base-bg,   t.$base-bg); }
+	&.has-bg-primary   { background-color: var(--wp--preset--color--primary,   t.$primary); }
+	&.has-bg-secondary { background-color: var(--wp--preset--color--secondary, t.$secondary); }
+	&.has-bg-dark-grey { background-color: var(--wp--preset--color--dark-grey, t.$dark-grey); }
+
+	// Dark style: light text on dark backgrounds
+	// CSS variables (--fi-*) override these when a custom color is set.
+	&.is-style-dark {
+		color: var(--fi-text, rgba(255, 255, 255, 0.8));
+
+		.wp-block-dbw-base-footer-info__company-name,
+		.wp-block-dbw-base-footer-info__hours-label {
+			color: var(--fi-heading, #fff);
+		}
+
+		.wp-block-dbw-base-footer-info__divider {
+			border-color: rgba(255, 255, 255, 0.12);
+		}
+
+		.wp-block-dbw-base-footer-info__legal-link {
+			color: var(--fi-text, rgba(255, 255, 255, 0.55));
+
+			&:hover,
+			&:focus-visible {
+				color: #fff;
+			}
+		}
+
+		.wp-block-dbw-base-footer-info__scroll-top {
+			color: var(--fi-text, rgba(255, 255, 255, 0.55));
+			border-color: rgba(255, 255, 255, 0.2);
+
+			&:hover,
+			&:focus-visible {
+				color: #fff;
+				border-color: rgba(255, 255, 255, 0.6);
+				background-color: rgba(255, 255, 255, 0.08);
+			}
+		}
+
+		// Outline + plain social links on dark backgrounds
+		.wp-block-dbw-base-footer-info__social.is-social-style-circle,
+		.wp-block-dbw-base-footer-info__social.is-social-style-pill {
+			.wp-block-dbw-base-footer-info__social-link {
+				color: var(--fi-social, rgba(255, 255, 255, 0.55));
+				border-color: rgba(255, 255, 255, 0.2);
+
+				&:hover,
+				&:focus-visible {
+					color: #fff;
+					border-color: rgba(255, 255, 255, 0.6);
+					background-color: rgba(255, 255, 255, 0.08);
+				}
+			}
+		}
+
+		.wp-block-dbw-base-footer-info__social.is-social-style-plain {
+			.wp-block-dbw-base-footer-info__social-link {
+				color: var(--fi-social, rgba(255, 255, 255, 0.55));
+
+				&:hover,
+				&:focus-visible { color: #fff; }
+			}
+		}
+
+		// Filled variants on dark backgrounds: keep own bg color, icon stays white
+	}
+
+	// Centered layout
+	&.is-content-centered {
+		text-align: center;
+
+		.wp-block-dbw-base-footer-info__logo,
+		.wp-block-dbw-base-footer-info__image-wrap {
+			margin-inline: auto;
+		}
+
+		.wp-block-dbw-base-footer-info__social {
+			justify-content: center;
+		}
+
+		.wp-block-dbw-base-footer-info__bottom {
+			justify-content: center;
+		}
+
+		// Reset the auto-margin that normally pushes scroll-top to the right
+		.wp-block-dbw-base-footer-info__scroll-top {
+			margin-left: 0;
+		}
+
+		.wp-block-dbw-base-footer-info__legal {
+			justify-content: center;
+		}
+	}
+
+	// Inner container
+	&__inner {
+		@include sp.content-container;
+	}
+
+	// ── Logo ───────────────────────────────────────────────────────────
+
+	&__logo-wrap {
+		margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+	}
+
+	&__logo {
+		display: block;
+		height: auto;
+		max-width: 100%;
+	}
+
+	// ── Main content (company + aside) ─────────────────────────────────
+
+	&__main {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: clamp(1.5rem, 3vw, 2.5rem);
+		margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+
+		&.has-columns {
+			grid-template-columns: 1fr 1fr;
+
+			@media (max-width: 640px) {
+				grid-template-columns: 1fr;
+			}
+		}
+
+		// Stacked: single column, all children below each other
+		&.is-stacked {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	// ── Company ────────────────────────────────────────────────────────
+
+	&__company {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+
+	&__company-name {
+		margin: 0;
+		font-family: var(--gp-heading-font-family, inherit);
+		font-size: clamp(1rem, 1.3vw, 1.1rem);
+		font-weight: 700;
+		line-height: 1.4;
+		color: var(--fi-heading, var(--fi-text, var(--wp--preset--color--dark-grey, t.$dark-grey)));
+	}
+
+	&__address {
+		margin: 0;
+		font-style: normal; // reset browser italic
+		font-size: clamp(0.875rem, 1.1vw, 0.95rem);
+		line-height: 1.7;
+		color: inherit;
+	}
+
+	&__extra {
+		margin: 0;
+		font-size: clamp(0.875rem, 1.1vw, 0.95rem);
+		line-height: 1.7;
+		color: inherit;
+	}
+
+	// ── Aside (hours + secondary image) ───────────────────────────────
+
+	&__aside {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	&__hours {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	&__hours-label {
+		display: block;
+		font-size: clamp(0.75rem, 0.95vw, 0.8rem);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.07em;
+		color: var(--fi-heading, var(--fi-text, var(--wp--preset--color--primary, t.$primary)));
+	}
+
+	&__hours-text {
+		font-size: clamp(0.875rem, 1.1vw, 0.95rem);
+		line-height: 1.7;
+		color: inherit;
+
+		p { margin: 0; }
+	}
+
+	&__image-wrap {
+		border-radius: 4px;
+		overflow: hidden;
+	}
+
+	&__image {
+		display: block;
+		width: 100%;
+		height: auto;
+		object-fit: cover;
+	}
+
+	// ── Social Links ───────────────────────────────────────────────────
+
+	&__social {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-bottom: clamp(1rem, 2vw, 1.5rem);
+	}
+
+	// Base: shared by all style variants
+	&__social-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 2.25rem;
+		height: 2.25rem;
+		color: var(--fi-social, inherit);
+		text-decoration: none;
+		transition: all 0.2s ease;
+
+		svg { display: block; }
+
+		&:focus-visible {
+			outline: 2px solid currentColor;
+			outline-offset: 2px;
+		}
+	}
+
+	// ── Social icon style variants ──────────────────────────────────────
+
+	// Outline variants: border + transparent fill
+	&__social.is-social-style-circle,
+	&__social.is-social-style-pill {
+		.wp-block-dbw-base-footer-info__social-link {
+			border: 1px solid rgba(0, 0, 0, 0.18);
+
+			&:hover,
+			&:focus-visible {
+				color: var(--fi-social, var(--wp--preset--color--primary, t.$primary));
+				border-color: var(--fi-social, var(--wp--preset--color--primary, t.$primary));
+				background-color: rgba(0, 0, 0, 0.04);
+			}
+		}
+	}
+
+	// Filled variants: solid background, white icon
+	&__social.is-social-style-circle-filled,
+	&__social.is-social-style-pill-filled {
+		.wp-block-dbw-base-footer-info__social-link {
+			background-color: var(--fi-social, var(--wp--preset--color--primary, t.$primary));
+			border: none;
+			color: #fff;
+
+			&:hover,
+			&:focus-visible {
+				opacity: 0.8;
+				color: #fff;
+			}
+		}
+	}
+
+	// Circle shape (50% = perfect circle)
+	&__social.is-social-style-circle,
+	&__social.is-social-style-circle-filled {
+		.wp-block-dbw-base-footer-info__social-link {
+			border-radius: 50%;
+		}
+	}
+
+	// Pill shape (rounded rectangle)
+	&__social.is-social-style-pill,
+	&__social.is-social-style-pill-filled {
+		.wp-block-dbw-base-footer-info__social-link {
+			border-radius: 0.5rem;
+		}
+	}
+
+	// Plain: just the icon, no container
+	&__social.is-social-style-plain {
+		.wp-block-dbw-base-footer-info__social-link {
+			width: auto;
+			height: auto;
+			border: none;
+			border-radius: 0;
+			padding: 0.15rem;
+
+			&:hover,
+			&:focus-visible {
+				color: var(--fi-social, var(--wp--preset--color--primary, t.$primary));
+				background: none;
+			}
+		}
+	}
+
+	// ── Divider ────────────────────────────────────────────────────────
+
+	&__divider {
+		margin-block: clamp(1rem, 2vw, 1.5rem);
+		border: none;
+		border-top: 1px solid rgba(0, 0, 0, 0.12);
+	}
+
+	// ── Bottom bar ─────────────────────────────────────────────────────
+
+	&__bottom {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 0.75rem 1.5rem;
+	}
+
+	&__legal {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1.25rem;
+	}
+
+	&__legal-link {
+		font-size: clamp(0.8rem, 1vw, 0.875rem);
+		text-decoration: none;
+		color: var(--fi-text, var(--wp--preset--color--secondary, t.$secondary));
+		transition: color 0.2s ease;
+
+		&:hover,
+		&:focus-visible {
+			color: var(--wp--preset--color--primary, t.$primary);
+			text-decoration: underline;
+		}
+
+		&:focus-visible {
+			outline: 2px solid currentColor;
+			outline-offset: 2px;
+			border-radius: 2px;
+		}
+	}
+
+	&__scroll-top {
+		position: fixed;
+		bottom: 1.5rem;
+		right: 1.5rem;
+		z-index: 999;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 2.5rem;
+		height: 2.5rem;
+		background-color: var(--wp--preset--color--base-bg, #fff);
+		border: 1px solid rgba(0, 0, 0, 0.18);
+		border-radius: 50%;
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+		color: var(--fi-text, var(--wp--preset--color--secondary, t.$secondary));
+		text-decoration: none;
+		transition: all 0.2s ease;
+
+		svg { display: block; }
+
+		&:hover,
+		&:focus-visible {
+			color: var(--wp--preset--color--primary, t.$primary);
+			border-color: var(--wp--preset--color--primary, t.$primary);
+			background-color: rgba(82, 105, 131, 0.06);
+			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+		}
+
+		&:focus-visible {
+			outline: 2px solid currentColor;
+			outline-offset: 2px;
+		}
+	}
+
+	// ── Reduced motion ─────────────────────────────────────────────────
+
+	@media (prefers-reduced-motion: reduce) {
+		.wp-block-dbw-base-footer-info__legal-link,
+		.wp-block-dbw-base-footer-info__scroll-top {
+			transition: none;
+		}
+	}
+}

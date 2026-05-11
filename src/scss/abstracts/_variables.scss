@@ -1,0 +1,62 @@
+/**
+ * Design Tokens & Variables
+ *
+ * Farben kommen aus _tokens.scss (auto-generiert aus theme.json).
+ * Bei Farbänderungen: theme.json anpassen, dann `npm run tokens`.
+ *
+ * Alles andere (Spacing, Breakpoints, Transitions) lebt nur hier.
+ */
+
+@forward 'tokens';
+@use 'tokens' as *;
+
+// ----------------------------------------
+// Semantic Color Aliases (→ _tokens.scss)
+// ----------------------------------------
+$color-text:       $color-dark-grey;
+$color-background: $color-base-bg;
+$color-focus:      $color-primary;
+
+// ----------------------------------------
+// Spacing
+// ----------------------------------------
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+$spacing-2xl: 3rem;
+
+// ----------------------------------------
+// Typography
+// ----------------------------------------
+$font-family-base:
+  system-ui,
+  -apple-system,
+  'Segoe UI',
+  Roboto,
+  sans-serif;
+$font-size-base: 16px;
+$line-height-base: 1.6;
+
+// ----------------------------------------
+// Breakpoints – Mobile First
+// ----------------------------------------
+$breakpoint-xxs: 360px; // alte / kleine Phones
+$breakpoint-xs: 480px; // kleine Smartphones
+$breakpoint-sm: 640px; // große Phones
+$breakpoint-md: 767px; // Portrait Tablets
+$breakpoint-md-lg: 900px; // kleine Tablets / große Phones quer
+$breakpoint-lg: 1024px; // Standard Laptop
+$breakpoint-lg-xl: 1152px; // schmale Desktops
+$breakpoint-xl: 1280px; // Standard Desktop
+$breakpoint-xxl: 1440px; // große Monitore
+$breakpoint-xxxl: 1600px; // sehr große Screens
+$breakpoint-4k: 1920px; // Full HD +
+$breakpoint-5k: 2560px; // iMac 5K / Ultrawide
+
+// ----------------------------------------
+// Transitions
+// ----------------------------------------
+$transition-base: 0.2s ease-in-out;
+$transition-fast: 0.1s ease-in-out;

@@ -1,0 +1,15 @@
+{
+  "name": "dbw-base-blocks",
+  "version": "3.1.0",
+  "description": "Gutenberg blocks for dbw base theme",
+  "author": "dbw media <info@dbw-media.de>",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start",
+    "packages-update": "wp-scripts packages-update"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^30.0.0"
+  }
+}

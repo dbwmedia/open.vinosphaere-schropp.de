@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "dbw-base/card-item",
+  "version": "3.1.0",
+  "title": "Card",
+  "category": "dbw-base",
+  "icon": "format-image",
+  "description": "Einzelne Karte mit Bild, Überschrift, Text und optionalem Link.",
+  "keywords": ["card", "karte"],
+  "textdomain": "dbw-base",
+  "parent": ["dbw-base/cards"],
+  "supports": {
+    "html": false,
+    "reusable": false
+  },
+  "attributes": {
+    "mediaId": {
+      "type": "number"
+    },
+    "mediaUrl": {
+      "type": "string"
+    },
+    "mediaAlt": {
+      "type": "string",
+      "default": ""
+    },
+    "heading": {
+      "type": "string",
+      "default": ""
+    },
+    "text": {
+      "type": "string",
+      "default": ""
+    },
+    "linkText": {
+      "type": "string",
+      "default": ""
+    },
+    "linkUrl": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php"
+}

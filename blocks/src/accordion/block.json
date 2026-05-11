@@ -1,0 +1,34 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "dbw-base/accordion",
+  "version": "3.1.0",
+  "title": "Accordion",
+  "category": "dbw-base",
+  "icon": "list-view",
+  "description": "FAQ-Accordion mit animierten Frage-/Antwort-Paaren.",
+  "keywords": ["accordion", "faq", "fragen", "antworten", "toggle"],
+  "textdomain": "dbw-base",
+  "supports": {
+    "align": ["wide"],
+    "html": false,
+    "anchor": true
+  },
+  "attributes": {
+    "anchor": { "type": "string", "default": "" },
+    "align": {
+      "type": "string",
+      "default": "wide"
+    },
+    "paddingSize": {
+      "type": "string",
+      "default": "m",
+      "enum": ["s", "m", "l"]
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php",
+  "viewScript": "file:./view.js"
+}

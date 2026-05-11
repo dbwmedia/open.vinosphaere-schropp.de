@@ -1,0 +1,48 @@
+/**
+ * Split-Content Block – Editor Styles
+ *
+ * @package dbw-base
+ */
+
+.wp-block-dbw-base-split-content {
+	// Editor label
+	&::before {
+		content: "dbw: Split-Content";
+		position: absolute;
+		top: 8px;
+		left: 12px;
+		z-index: 10;
+		padding: 2px 8px;
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: #fff;
+		background-color: rgba(0, 0, 0, 0.4);
+		border-radius: 3px;
+		pointer-events: none;
+	}
+
+	// Image placeholder
+	&__placeholder {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		aspect-ratio: 4 / 3;
+		background-color: #f0f0f0;
+		border: 2px dashed #ccc;
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 0.85rem;
+		color: #666;
+
+		&:hover {
+			border-color: #999;
+		}
+	}
+
+	// Button preview (not clickable)
+	.wp-block-dbw-base-split-content__button {
+		pointer-events: none;
+	}
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "dbw-base/stat-counter",
+  "version": "3.1.0",
+  "title": "Stat-Counter",
+  "category": "dbw-base",
+  "icon": "chart-bar",
+  "description": "Animierter Zahlen-Counter mit Label für Trust-Sektionen.",
+  "keywords": ["counter", "statistik", "zahlen", "trust", "kennzahl"],
+  "textdomain": "dbw-base",
+  "supports": {
+    "html": false,
+    "anchor": true
+  },
+  "attributes": {
+    "anchor": { "type": "string", "default": "" },
+    "number": {
+      "type": "number",
+      "default": 100
+    },
+    "suffix": {
+      "type": "string",
+      "default": "+"
+    },
+    "prefix": {
+      "type": "string",
+      "default": ""
+    },
+    "label": {
+      "type": "string",
+      "default": ""
+    },
+    "duration": {
+      "type": "number",
+      "default": 2000
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php",
+  "viewScript": "file:./view.js"
+}

@@ -1,0 +1,144 @@
+/**
+ * Button System – Shared Mixins
+ *
+ * Single source of truth for all block buttons.
+ * Variants: primary | secondary | outline | outline-inverted
+ *
+ * Usage in block SCSS:
+ *   @use '../buttons' as btn;
+ *   .my-block__button           { @include btn.primary; }
+ *   .my-block__button.is-style-secondary { @include btn.secondary; }
+ *
+ * @package dbw-base
+ */
+
+@use 'sass:color';
+@use 'tokens' as t;
+
+// ----------------------------------------
+// Shared Token Defaults
+// ----------------------------------------
+
+$radius:     6px;
+$transition: background-color 0.2s ease,
+             border-color 0.2s ease,
+             color 0.2s ease,
+             transform 0.2s ease,
+             box-shadow 0.2s ease;
+
+// ----------------------------------------
+// Base — Structure only, no colors
+// Included internally by every variant mixin.
+// ----------------------------------------
+
+@mixin base {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.8rem 1.75rem;
+	font-size: 1rem;
+	font-weight: 600;
+	line-height: 1;
+	text-decoration: none;
+	border-radius: $radius;
+	border: 2px solid transparent;
+	cursor: pointer;
+	transition: $transition;
+
+	&:focus-visible {
+		outline: 2px solid var(--wp--preset--color--primary, t.$primary);
+		outline-offset: 2px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		transition: none;
+
+		&:hover {
+			transform: none;
+			box-shadow: none;
+		}
+	}
+}
+
+// ----------------------------------------
+// Primary — Solid brand fill
+// ----------------------------------------
+
+@mixin primary {
+	@include base;
+
+	color: #fff;
+	background-color: var(--wp--preset--color--primary, t.$primary);
+	border-color: var(--wp--preset--color--primary, t.$primary);
+
+	&:hover,
+	&:focus-visible {
+		background-color: #{color.adjust(t.$primary, $lightness: -8%)};
+		border-color: #{color.adjust(t.$primary, $lightness: -8%)};
+		color: #fff;
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	}
+}
+
+// ----------------------------------------
+// Secondary — Transparent + subtle dark border
+// ----------------------------------------
+
+@mixin secondary {
+	@include base;
+
+	color: var(--wp--preset--color--dark-grey, t.$dark-grey);
+	background-color: transparent;
+	border-color: rgba(t.$dark-grey, 0.3);
+
+	&:hover,
+	&:focus-visible {
+		border-color: var(--wp--preset--color--dark-grey, t.$dark-grey);
+		background-color: rgba(0, 0, 0, 0.04);
+		color: var(--wp--preset--color--dark-grey, t.$dark-grey);
+	}
+}
+
+// ----------------------------------------
+// Outline — Transparent + primary border, fills on hover
+// ----------------------------------------
+
+@mixin outline {
+	@include base;
+
+	color: var(--wp--preset--color--primary, t.$primary);
+	background-color: transparent;
+	border-color: var(--wp--preset--color--primary, t.$primary);
+
+	&:hover,
+	&:focus-visible {
+		background-color: var(--wp--preset--color--primary, t.$primary);
+		border-color: var(--wp--preset--color--primary, t.$primary);
+		color: #fff;
+		transform: translateY(-1px);
+	}
+}
+
+// ----------------------------------------
+// Outline Inverted — For dark / colored section backgrounds
+// ----------------------------------------
+
+@mixin outline-inverted {
+	@include base;
+
+	color: #fff;
+	background-color: transparent;
+	border-color: rgba(255, 255, 255, 0.6);
+
+	&:focus-visible {
+		outline-color: #fff;
+	}
+
+	&:hover,
+	&:focus-visible {
+		background-color: rgba(255, 255, 255, 0.15);
+		border-color: #fff;
+		color: #fff;
+	}
+}

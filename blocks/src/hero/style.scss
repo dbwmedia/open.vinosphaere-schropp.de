@@ -1,0 +1,175 @@
+/**
+ * Hero Block – Frontend Styles
+ *
+ * Color strategy:
+ * - Primary: --wp--preset--color--* (from theme.json) with token fallbacks
+ * - Font:    --gp-*-font-family (from GeneratePress Customizer)
+ *
+ * Fallback values come from blocks/src/_tokens.scss (auto-generated from theme.json).
+ *
+ * @package dbw-base
+ */
+
+@use '../tokens' as t;
+@use '../spacing' as sp;
+@use '../buttons' as btn;
+
+.wp-block-dbw-base-hero {
+	position: relative;
+	display: flex;
+	align-items: center;
+	min-height: 70vh;
+	// padding-inline handled by __content (content-container mixin)
+	padding-block: clamp(3rem, 8vw, 6rem);
+	overflow: hidden;
+	color: var(--wp--preset--color--dark-grey, t.$dark-grey);
+	background-color: var(--wp--preset--color--base-bg, t.$base-bg);
+
+	// Background image
+	&__media {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		z-index: 0;
+	}
+
+	// Dark overlay
+	&__overlay {
+		position: absolute;
+		inset: 0;
+		background-color: #000;
+		z-index: 1;
+	}
+
+	// When image is present, text goes white
+	&:has(.wp-block-dbw-base-hero__media) {
+		color: #fff;
+
+		.wp-block-dbw-base-hero__heading {
+			color: #fff;
+		}
+
+		.wp-block-dbw-base-hero__text {
+			color: rgba(255, 255, 255, 0.9);
+		}
+
+		// Secondary button becomes outline-inverted on dark image backgrounds
+		.wp-block-dbw-base-hero__button.is-secondary {
+			@include btn.outline-inverted;
+		}
+	}
+
+	// Content wrapper – constrained to wide-size with consistent gutter
+	&__content {
+		position: relative;
+		z-index: 2;
+		@include sp.content-container;
+	}
+
+	// Heading
+	&__heading {
+		margin: 0 0 1rem;
+		font-family: var(--gp-heading-font-family, inherit);
+		font-size: clamp(2rem, 5vw, 3.5rem);
+		font-weight: 800;
+		line-height: 1.1;
+		letter-spacing: -0.025em;
+		color: var(--wp--preset--color--dark-grey, t.$dark-grey);
+		text-wrap: balance;
+	}
+
+	// Subtext
+	&__text {
+		margin: 0 0 2rem;
+		font-family: var(--gp-body-font-family, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif);
+		font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+		line-height: 1.6;
+		color: var(--wp--preset--color--secondary, t.$secondary);
+		text-wrap: pretty;
+	}
+
+	// Button row
+	&__buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-top: 0.5rem;
+	}
+
+	// Buttons
+	&__button {
+		font-family: var(--gp-body-font-family, inherit);
+
+		&.is-primary {
+			@include btn.primary;
+		}
+
+		&.is-secondary {
+			@include btn.secondary;
+		}
+	}
+
+	// Scroll indicator
+	&__scroll {
+		position: absolute;
+		bottom: 2rem;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 2;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.25rem;
+		color: currentColor;
+		opacity: 0.6;
+		animation: dbw-hero-bounce 2s ease-in-out infinite;
+
+		svg {
+			width: 28px;
+			height: 28px;
+		}
+	}
+
+	@keyframes dbw-hero-bounce {
+		0%, 100% {
+			transform: translateX(-50%) translateY(0);
+			opacity: 0.6;
+		}
+		50% {
+			transform: translateX(-50%) translateY(8px);
+			opacity: 1;
+		}
+	}
+
+	// Layout variants – content-container is always centered at wide-size,
+	// text-align controls the copy direction within it.
+	&.is-layout-text-center {
+		.wp-block-dbw-base-hero__content {
+			text-align: center;
+		}
+
+		.wp-block-dbw-base-hero__buttons {
+			justify-content: center;
+		}
+	}
+
+	&.is-layout-text-right {
+		.wp-block-dbw-base-hero__content {
+			text-align: right;
+		}
+
+		.wp-block-dbw-base-hero__buttons {
+			justify-content: flex-end;
+		}
+	}
+
+	// Reduced motion for scroll indicator (button reduced-motion is handled by the mixin)
+	@media (prefers-reduced-motion: reduce) {
+		.wp-block-dbw-base-hero__scroll {
+			animation: none;
+			opacity: 0.6;
+		}
+	}
+}

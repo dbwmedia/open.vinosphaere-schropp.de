@@ -1,0 +1,80 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "dbw-base/hero",
+  "version": "3.1.0",
+  "title": "Hero",
+  "category": "dbw-base",
+  "icon": "cover-image",
+  "description": "Moderner Hero-Bereich mit Überschrift, Text, Buttons und optionalem Hintergrundbild.",
+  "keywords": ["hero", "banner", "header", "teaser"],
+  "textdomain": "dbw-base",
+  "supports": {
+    "align": ["wide", "full"],
+    "html": false,
+    "anchor": true
+  },
+  "attributes": {
+    "anchor": { "type": "string", "default": "" },
+    "align": {
+      "type": "string",
+      "default": "full"
+    },
+    "heading": {
+      "type": "string",
+      "source": "html",
+      "selector": ".wp-block-dbw-base-hero__heading"
+    },
+    "text": {
+      "type": "string",
+      "source": "html",
+      "selector": ".wp-block-dbw-base-hero__text"
+    },
+    "primaryButtonText": {
+      "type": "string",
+      "default": ""
+    },
+    "primaryButtonUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "secondaryButtonText": {
+      "type": "string",
+      "default": ""
+    },
+    "secondaryButtonUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "mediaId": {
+      "type": "number"
+    },
+    "mediaUrl": {
+      "type": "string"
+    },
+    "mediaAlt": {
+      "type": "string",
+      "default": ""
+    },
+    "overlayOpacity": {
+      "type": "number",
+      "default": 50
+    },
+    "minHeight": {
+      "type": "string",
+      "default": "70vh"
+    },
+    "layout": {
+      "type": "string",
+      "default": "text-left",
+      "enum": ["text-left", "text-center", "text-right"]
+    },
+    "showScrollIndicator": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css"
+}

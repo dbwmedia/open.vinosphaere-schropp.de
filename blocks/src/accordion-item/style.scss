@@ -1,0 +1,94 @@
+/**
+ * Accordion Item Block – Frontend Styles
+ *
+ * @package dbw-base
+ */
+
+@use '../tokens' as t;
+
+.wp-block-dbw-base-accordion-item {
+	border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+	&:first-child {
+		border-top: 1px solid rgba(0, 0, 0, 0.1);
+	}
+
+	// Trigger button
+	&__trigger {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		padding: 1.25rem 0;
+		background: none;
+		border: none;
+		cursor: pointer;
+		text-align: left;
+		gap: 1rem;
+
+		&:hover {
+			.wp-block-dbw-base-accordion-item__question {
+				color: var(--wp--preset--color--primary, t.$primary);
+			}
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--wp--preset--color--primary, t.$primary);
+			outline-offset: 2px;
+			border-radius: 2px;
+		}
+	}
+
+	// Question text
+	&__question {
+		font-family: var(--gp-heading-font-family, inherit);
+		font-size: clamp(1rem, 1.3vw, 1.15rem);
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--wp--preset--color--dark-grey, t.$dark-grey);
+		transition: color 0.2s ease;
+	}
+
+	// Chevron icon
+	&__icon {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		color: var(--wp--preset--color--secondary, t.$secondary);
+		transition: transform 0.3s ease;
+	}
+
+	// Content area (collapsed by default)
+	&__content {
+		max-height: 0;
+		overflow: hidden;
+		transition: max-height 0.3s ease;
+	}
+
+	// Answer text
+	&__answer {
+		margin: 0;
+		padding: 0 0 1.25rem;
+		font-size: clamp(0.9rem, 1.2vw, 1rem);
+		line-height: 1.7;
+		color: var(--wp--preset--color--secondary, t.$secondary);
+	}
+
+	// Open state
+	&.is-open {
+		.wp-block-dbw-base-accordion-item__icon {
+			transform: rotate(180deg);
+		}
+	}
+
+	// Reduced motion
+	@media (prefers-reduced-motion: reduce) {
+		.wp-block-dbw-base-accordion-item__icon {
+			transition: none;
+		}
+
+		.wp-block-dbw-base-accordion-item__content {
+			transition: none;
+		}
+	}
+}

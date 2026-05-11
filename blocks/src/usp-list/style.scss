@@ -1,0 +1,44 @@
+/**
+ * USP Icon-List Block – Frontend Styles
+ *
+ * @package dbw-base
+ */
+
+@use '../spacing' as sp;
+
+.wp-block-dbw-base-usp-list {
+	@include sp.section-padding;
+
+	&__grid {
+		@include sp.content-container;
+		display: grid;
+		gap: clamp(1.5rem, 3vw, 2.5rem);
+	}
+
+	&.has-2-columns .wp-block-dbw-base-usp-list__grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	&.has-3-columns .wp-block-dbw-base-usp-list__grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+
+	&.has-4-columns .wp-block-dbw-base-usp-list__grid {
+		grid-template-columns: repeat(4, 1fr);
+	}
+
+	@media (max-width: 768px) {
+		&.has-2-columns .wp-block-dbw-base-usp-list__grid,
+		&.has-3-columns .wp-block-dbw-base-usp-list__grid,
+		&.has-4-columns .wp-block-dbw-base-usp-list__grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (min-width: 769px) and (max-width: 1024px) {
+		&.has-3-columns .wp-block-dbw-base-usp-list__grid,
+		&.has-4-columns .wp-block-dbw-base-usp-list__grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+}

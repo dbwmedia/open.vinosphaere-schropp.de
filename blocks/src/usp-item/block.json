@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "dbw-base/usp-item",
+  "version": "3.1.0",
+  "title": "USP-Punkt",
+  "category": "dbw-base",
+  "icon": "star-filled",
+  "description": "Einzelner USP-Punkt mit vordefiniertem Icon, Titel und Text.",
+  "keywords": ["usp", "punkt", "vorteil"],
+  "textdomain": "dbw-base",
+  "parent": ["dbw-base/usp-list"],
+  "supports": {
+    "html": false,
+    "reusable": false
+  },
+  "attributes": {
+    "icon": {
+      "type": "string",
+      "default": "check"
+    },
+    "customIconId": {
+      "type": "number"
+    },
+    "customIconUrl": {
+      "type": "string"
+    },
+    "heading": {
+      "type": "string",
+      "default": ""
+    },
+    "text": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php"
+}

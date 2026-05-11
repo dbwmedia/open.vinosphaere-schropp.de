@@ -1,0 +1,198 @@
+@use 'sass:color';
+@use '../abstracts/variables' as *;
+
+// ----------------------------------------
+// Header Specific Variables
+// ----------------------------------------
+$header-blur: 18px;
+$header-border-radius: 500px;
+$header-bg-glass: rgba($color-base-bg, 0.75);
+$header-shadow: 0 12px 40px rgba($color-dark-grey, 0.08);
+
+#masthead {
+  position: fixed;
+  bottom: $spacing-lg;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - (#{$spacing-md} * 2));
+  max-width: $breakpoint-lg;
+  z-index: 9999;
+
+  // Glassmorphism
+  background: $header-bg-glass;
+  backdrop-filter: blur($header-blur);
+  -webkit-backdrop-filter: blur($header-blur);
+
+  border: 1px solid rgba($color-dark-grey, 0.05);
+  border-radius: $header-border-radius;
+  box-shadow: $header-shadow;
+  padding: 8px; // Gleichmäßiges Padding für die Button-Reihe
+  transition: $transition-base;
+
+  .inside-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 !important;
+  }
+
+  // Branding
+  .site-branding-container {
+    display: flex;
+    align-items: center;
+    padding-left: $spacing-sm;
+
+    .site-logo img {
+      height: 30px;
+      width: auto;
+    }
+
+    .site-branding {
+      margin-left: $spacing-sm;
+      .main-title a {
+        font-weight: 600;
+        color: $color-dark-grey;
+        font-size: 0.85rem;
+      }
+    }
+  }
+
+  // Navigation
+  #site-navigation {
+    .main-nav ul {
+      display: flex;
+      align-items: center;
+      gap: 8px; // Abstand zwischen den Buttons
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      li {
+        a {
+          display: block;
+          padding: 8px 18px;
+          font-weight: 500;
+          font-size: 0.75rem;
+          color: $color-dark-grey;
+          text-transform: none;
+          border-radius: $header-border-radius;
+          transition: $transition-base;
+          line-height: inherit;
+
+          // --- Outline Style für alle ---
+          border: 1px solid rgba($color-primary, 0.2);
+
+          &:hover,
+          &:focus,
+          &:active {
+            border-color: $color-primary;
+            background: rgba($color-primary, 0.04);
+            color: $color-primary;
+          }
+        }
+
+        &.current-menu-item a:not(.button) {
+          border-color: $color-primary;
+          color: $color-primary;
+          background: rgba($color-primary, 0.08);
+        }
+
+        // --- Solid Style für den letzten Button ---
+        &:last-child {
+          a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: $color-primary;
+            color: $color-base-bg;
+            border-color: $color-primary;
+            font-weight: 600;
+
+            &::before {
+              content: '';
+              display: inline-block;
+              width: 14px;
+              height: 14px;
+              flex-shrink: 0;
+              background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='white' d='M493.4 24.6l-104-24c-11.3-2.6-22.9 3.3-27.5 13.9l-48 112c-4.2 9.8-1.4 21.3 6.9 28l60.6 49.6c-36 76.7-98.9 140.5-177.2 177.2l-49.6-60.6c-6.8-8.3-18.2-11.1-28-6.9l-112 48C3.9 366.5-2 378.1.6 389.4l24 104C27.1 504.2 36.7 512 48 512c256.1 0 464-207.5 464-464 0-11.2-7.7-20.9-18.6-23.4z'/%3E%3C/svg%3E");
+              background-size: contain;
+              background-repeat: no-repeat;
+              transform: scaleX(-1);
+            }
+
+            &:hover,
+            &:focus,
+            &:active {
+              background: color.adjust($color-primary, $lightness: -5%);
+              border-color: color.adjust($color-primary, $lightness: -5%);
+              color: $color-base-bg;
+              transform: translateY(-1px);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Mobile
+  @media (max-width: $breakpoint-md) {
+    bottom: $spacing-md;
+    width: calc(100% - 20px);
+
+    .site-branding-container {
+      .site-logo {
+        margin-right: 0;
+      }
+      .site-branding {
+        display: none;
+      }
+    }
+
+    // Auf Mobile nur den CTA Button zeigen oder Abstände verringern
+    #site-navigation .main-nav ul {
+      gap: 4px;
+      li a {
+        padding: 4px 8px;
+        font-size: 0.65rem;
+      }
+
+      // Letzter Button: nur Icon, Text ausblenden
+      li:last-child a {
+        font-size: 0;
+        gap: 0;
+        padding: 8px 10px;
+
+        &::before {
+          width: 12px;
+          height: 12px;
+        }
+      }
+    }
+  }
+}
+
+body {
+  padding-bottom: 110px;
+}
+
+/* Verhindert das Umbrechen von Logo und Menü auf mobilen Geräten */
+@media (max-width: 768px) {
+  .inside-header {
+    flex-direction: row !important; /* Erzwingt die horizontale Ausrichtung */
+    display: flex !important;
+    justify-content: space-between; /* Schiebt Logo nach links, Menü nach rechts */
+    align-items: center; /* Zentriert beide vertikal zueinander */
+    text-align: left !important; /* Entfernt die zentrierte Textausrichtung */
+  }
+
+  /* Entfernt den Abstand unter dem Logo, der auf Mobilgeräten oft entsteht */
+  .site-logo {
+    margin-bottom: 0 !important;
+    margin-right: 20px; /* Kleiner Sicherheitsabstand zum Menü */
+  }
+
+  /* Stellt sicher, dass das Menü nicht die volle Breite einnimmt */
+  .main-navigation {
+    width: auto !important;
+  }
+}

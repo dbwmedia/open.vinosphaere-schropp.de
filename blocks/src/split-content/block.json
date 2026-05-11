@@ -1,0 +1,81 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "dbw-base/split-content",
+  "version": "3.2.0",
+  "title": "Split-Content",
+  "category": "dbw-base",
+  "icon": "columns",
+  "description": "50/50 Layout mit Bild und Text. Ideal für Storytelling-Sektionen.",
+  "keywords": ["split", "teilen", "bild-text", "storytelling", "zwei-spalten"],
+  "textdomain": "dbw-base",
+  "supports": {
+    "align": ["wide", "full"],
+    "html": false,
+    "anchor": true
+  },
+  "attributes": {
+    "anchor": { "type": "string", "default": "" },
+    "align": {
+      "type": "string",
+      "default": "wide"
+    },
+    "mediaId": {
+      "type": "number"
+    },
+    "mediaUrl": {
+      "type": "string"
+    },
+    "mediaAlt": {
+      "type": "string",
+      "default": ""
+    },
+    "heading": {
+      "type": "string",
+      "default": ""
+    },
+    "text": {
+      "type": "string",
+      "default": ""
+    },
+    "buttonText": {
+      "type": "string",
+      "default": ""
+    },
+    "buttonUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "buttonStyle": {
+      "type": "string",
+      "default": "primary",
+      "enum": ["primary", "secondary", "outline", "outline-inverted"]
+    },
+    "buttons": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "text":   { "type": "string" },
+          "url":    { "type": "string" },
+          "style":  { "type": "string" },
+          "newTab": { "type": "boolean" }
+        }
+      }
+    },
+    "imageRight": {
+      "type": "boolean",
+      "default": false
+    },
+    "paddingSize": {
+      "type": "string",
+      "default": "m",
+      "enum": ["s", "m", "l"]
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php"
+}

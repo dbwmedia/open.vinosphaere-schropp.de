@@ -1,0 +1,30 @@
+/**
+ * Layout
+ * Base layout styles
+ *
+ * Breitensteuerung laeuft ueber theme.json (contentSize / wideSize).
+ * GP Content Container ist auf Full Width gesetzt (siehe gp-settings.php),
+ * daher kein CSS-Breakout-Hack noetig.
+ */
+
+/**
+ * GeneratePress Alignment-Bleed neutralisieren
+ *
+ * GP-Regel (Parent Theme):
+ *   .entry-content .alignwide                          → margin-left:-40px; width:calc(100%+80px)
+ *   body:not(.no-sidebar) .entry-content .alignfull   → gleiches (greift bei uns NIE,
+ *                                                        weil immer no-sidebar gesetzt)
+ *
+ * Nur .alignwide wird korrigiert: GP's -40px-Bleed-Hack stört, weil unsere Blöcke
+ * ihre Breite selbst über den content-container-Mixin steuern.
+ *
+ * .alignfull bleibt UNBERÜHRT – das echte Vollbreite-Ausbrechen kommt von
+ * WordPress-Core-CSS (100vw + negativem Margin). Das darf nicht überschrieben werden.
+ */
+.entry-content {
+    [class*="wp-block-dbw-base-"].alignwide {
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+}

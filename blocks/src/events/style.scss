@@ -1,0 +1,212 @@
+/**
+ * Vinosphäre Events Block – Frontend Styles
+ *
+ * @package dbw-base
+ */
+
+@use '../tokens' as t;
+@use '../spacing' as sp;
+
+.wp-block-dbw-base-events {
+	@include sp.section-padding;
+
+	// padding-inline handled by __header / __grid (content-container mixin)
+
+	// Header (Überschrift + Intro)
+	.dbw-events__header {
+		@include sp.content-container;
+		margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+		text-align: center;
+	}
+
+	.dbw-events__heading {
+		font-size: clamp(1.25rem, 3vw, 2rem);
+		font-weight: 700;
+		color: t.$dark-grey;
+		margin: 0 0 0.5rem;
+	}
+
+	.dbw-events__intro {
+		font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+		color: rgba(t.$dark-grey, 0.7);
+		margin: 0;
+		max-width: 640px;
+		margin-inline: auto;
+	}
+
+	// Grid
+	.dbw-events__grid {
+		@include sp.content-container;
+		display: grid;
+		gap: clamp(0.75rem, 1.5vw, 1.25rem);
+	}
+
+	&.has-1-columns .dbw-events__grid {
+		grid-template-columns: 1fr;
+	}
+
+	&.has-2-columns .dbw-events__grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	&.has-3-columns .dbw-events__grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+
+	// Card
+	.dbw-events__card {
+		display: flex;
+		align-items: center;
+		gap: clamp(1rem, 2vw, 1.5rem);
+		padding: clamp(1rem, 2vw, 1.5rem);
+		background-color: var(--wp--preset--color--primary, t.$primary);
+		border-radius: 6px;
+		overflow: hidden;
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+		&:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+		}
+	}
+
+	// Thumbnail
+	.dbw-events__image {
+		flex-shrink: 0;
+		width: clamp(3.5rem, 6vw, 5rem);
+		height: clamp(3.5rem, 6vw, 5rem);
+		border-radius: 4px;
+		overflow: hidden;
+
+		img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			display: block;
+		}
+	}
+
+	// Date badge
+	.dbw-events__date {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		flex-shrink: 0;
+		min-width: 3.5rem;
+		padding: 0.5rem;
+		background-color: rgba(255, 255, 255, 0.15);
+		border-radius: 4px;
+	}
+
+	.dbw-events__day {
+		font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+		font-weight: 700;
+		line-height: 1;
+		color: #fff;
+	}
+
+	.dbw-events__month {
+		font-size: 0.65rem;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: rgba(255, 255, 255, 0.8);
+		margin-top: 0.15rem;
+	}
+
+	// Body
+	.dbw-events__body {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.dbw-events__title {
+		font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: #fff;
+		margin: 0;
+	}
+
+	.dbw-events__info {
+		font-size: clamp(0.75rem, 1vw, 0.85rem);
+		color: rgba(255, 255, 255, 0.7);
+		margin: 0.25rem 0 0;
+	}
+
+	// Time – large typographic display on the right edge of the card
+	.dbw-events__time {
+		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding-left: clamp(0.75rem, 2vw, 1.5rem);
+		border-left: 1px solid rgba(255, 255, 255, 0.18);
+		text-align: center;
+		min-width: 4.5rem;
+	}
+
+	.dbw-events__time-value {
+		display: flex;
+		align-items: baseline;
+		gap: 0;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.dbw-events__time-h,
+	.dbw-events__time-m {
+		font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+		font-weight: 800;
+		color: #fff;
+		letter-spacing: -0.04em;
+		line-height: 1;
+	}
+
+	.dbw-events__time-sep {
+		font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+		font-weight: 800;
+		color: rgba(255, 255, 255, 0.45);
+		letter-spacing: 0;
+		line-height: 1;
+		margin: 0 0.04em 0.1em;
+	}
+
+	.dbw-events__time-label {
+		display: block;
+		font-size: 0.55rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.2em;
+		color: rgba(255, 255, 255, 0.4);
+		margin-top: 0.4rem;
+	}
+
+	// Responsive
+	@media (max-width: 768px) {
+		&.has-2-columns .dbw-events__grid,
+		&.has-3-columns .dbw-events__grid {
+			grid-template-columns: 1fr;
+		}
+
+		.dbw-events__card {
+			flex-wrap: wrap;
+		}
+
+		// Keep time as a compact right-side element on mobile
+		.dbw-events__time {
+			padding-left: clamp(0.5rem, 3vw, 0.75rem);
+			min-width: 3.5rem;
+		}
+
+		.dbw-events__time-h,
+		.dbw-events__time-m {
+			font-size: clamp(1.25rem, 5vw, 1.6rem);
+		}
+
+		.dbw-events__time-sep {
+			font-size: clamp(0.9rem, 3.5vw, 1.2rem);
+		}
+	}
+}

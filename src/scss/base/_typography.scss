@@ -1,0 +1,51 @@
+/**
+ * Typography
+ * Base typography styles
+ *
+ * Uses --wp--preset--color--* from theme.json where possible.
+ * SCSS fallback values must match theme.json.
+ */
+
+@use 'sass:color';
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+html {
+  font-size: $font-size-base;
+}
+
+body {
+  font-family: $font-family-base;
+  color: var(--wp--preset--color--dark-grey, $color-text);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+a {
+  color: var(--wp--preset--color--primary, $color-primary);
+  text-decoration: none;
+  transition: color $transition-base;
+
+  @include focus-visible;
+
+  // Explizites color-Override neutralisiert GeneratePress-Default:
+  // a:hover, a:focus, a:active { color: var(--contrast); }
+  // Gleiche Spezifität, Child-CSS lädt nach GP → Cascade gewinnt.
+  &:hover,
+  &:focus,
+  &:active {
+    color: color.adjust($color-primary, $lightness: -10%);
+  }
+}
+
+p {
+  font-size: 1.15rem;
+}

@@ -1,0 +1,41 @@
+// Central section-level spacing presets
+// Auto-generated fallback values match theme.json spacingSizes.
+//
+// Usage in block SCSS:
+//   @use '../spacing' as sp;
+//   .wp-block-dbw-base-cards { @include sp.section-padding; }
+//   .wp-block-dbw-base-cards__inner { @include sp.content-container; }
+
+@mixin section-padding {
+	&.is-padding-s {
+		padding-block: var(--wp--preset--spacing--s, clamp(1.5rem, 4vw, 2.5rem));
+	}
+
+	&.is-padding-m {
+		padding-block: var(--wp--preset--spacing--m, clamp(3rem, 6vw, 5rem));
+	}
+
+	&.is-padding-l {
+		padding-block: var(--wp--preset--spacing--l, clamp(5rem, 10vw, 8rem));
+	}
+}
+
+// Inner content container – apply to the direct content wrapper of full-bleed blocks.
+// Ensures consistent horizontal alignment across all sections regardless of block align
+// (none / wide / full). The outer shell handles background / full-bleed; this handles
+// the readable content column.
+//
+// Result: all left-aligned content starts at the same horizontal position.
+@mixin content-container {
+	max-width: min(var(--wp--style--global--wide-size, 1200px), 100%);
+	margin-inline: auto;
+	padding-inline: clamp(1.25rem, 5vw, 2.5rem);
+}
+
+// Narrower variant for text-heavy blocks (e.g. accordion) where a tight column
+// aids readability. Uses the same padding-inline so the left gutter aligns.
+@mixin content-container-narrow {
+	max-width: min(var(--wp--style--global--content-size, 800px), 100%);
+	margin-inline: auto;
+	padding-inline: clamp(1.25rem, 5vw, 2.5rem);
+}
