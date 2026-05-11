@@ -1,62 +1,19 @@
 /**
- * Design Tokens & Variables
+ * Theme Variables
  *
- * Farben kommen aus _tokens.scss (auto-generiert aus theme.json).
- * Bei Farbänderungen: theme.json anpassen, dann `npm run tokens`.
+ * Reicht alle Core-Variablen (Tokens aus theme.json, Breakpoints, Type-Scale,
+ * semantische Aliase, Component-Spacing) per @forward durch und reserviert
+ * darunter Platz für theme-eigene Sass-Variablen.
  *
- * Alles andere (Spacing, Breakpoints, Transitions) lebt nur hier.
+ * Auflösung: Sass loadPath listet src/scss/ vor core/src/scss/, deshalb
+ * resolved jedes `@use 'abstracts/variables' as *` ab jetzt auf DIESE Datei.
+ * Komponenten merken nichts davon — alle Core-Variablen bleiben erreichbar.
+ *
+ * Brand-Design-Tokens (Farben, Spacing, Radius, Breakpoints) gehören weiter
+ * in theme.json + core/breakpoints.json; auto-gen läuft über `npm run tokens`.
  */
 
-@forward 'tokens';
-@use 'tokens' as *;
+@forward '../../../core/src/scss/abstracts/variables';
 
-// ----------------------------------------
-// Semantic Color Aliases (→ _tokens.scss)
-// ----------------------------------------
-$color-text:       $color-dark-grey;
-$color-background: $color-base-bg;
-$color-focus:      $color-primary;
-
-// ----------------------------------------
-// Spacing
-// ----------------------------------------
-$spacing-xs: 0.25rem;
-$spacing-sm: 0.5rem;
-$spacing-md: 1rem;
-$spacing-lg: 1.5rem;
-$spacing-xl: 2rem;
-$spacing-2xl: 3rem;
-
-// ----------------------------------------
-// Typography
-// ----------------------------------------
-$font-family-base:
-  system-ui,
-  -apple-system,
-  'Segoe UI',
-  Roboto,
-  sans-serif;
-$font-size-base: 16px;
-$line-height-base: 1.6;
-
-// ----------------------------------------
-// Breakpoints – Mobile First
-// ----------------------------------------
-$breakpoint-xxs: 360px; // alte / kleine Phones
-$breakpoint-xs: 480px; // kleine Smartphones
-$breakpoint-sm: 640px; // große Phones
-$breakpoint-md: 767px; // Portrait Tablets
-$breakpoint-md-lg: 900px; // kleine Tablets / große Phones quer
-$breakpoint-lg: 1024px; // Standard Laptop
-$breakpoint-lg-xl: 1152px; // schmale Desktops
-$breakpoint-xl: 1280px; // Standard Desktop
-$breakpoint-xxl: 1440px; // große Monitore
-$breakpoint-xxxl: 1600px; // sehr große Screens
-$breakpoint-4k: 1920px; // Full HD +
-$breakpoint-5k: 2560px; // iMac 5K / Ultrawide
-
-// ----------------------------------------
-// Transitions
-// ----------------------------------------
-$transition-base: 0.2s ease-in-out;
-$transition-fast: 0.1s ease-in-out;
+// ─── Theme-eigene Sass-Variablen ────────────────────────────────────────────
+// (aktuell keine — Header-spezifische Vars leben in components/_header.scss)

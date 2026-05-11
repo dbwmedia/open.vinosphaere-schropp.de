@@ -15,7 +15,7 @@ $header-shadow: 0 12px 40px rgba($color-dark-grey, 0.08);
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - (#{$spacing-md} * 2));
-  max-width: $breakpoint-lg;
+  max-width: $bp-lg;
   z-index: 9999;
 
   // Glassmorphism
@@ -135,7 +135,7 @@ $header-shadow: 0 12px 40px rgba($color-dark-grey, 0.08);
   }
 
   // Mobile
-  @media (max-width: $breakpoint-md) {
+  @media (max-width: $bp-md) {
     bottom: $spacing-md;
     width: calc(100% - 20px);
 

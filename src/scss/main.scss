@@ -1,18 +1,19 @@
 /**
- * Main Stylesheet
- * dbw base - GeneratePress Child Theme
- * https://dbw-media.de
+ * Theme Stylesheet – Project Entry Point
+ *
+ * Lädt die Framework-Defaults aus dem Core (Reset, Typography inkl.
+ * --gp-*-font-family Custom Properties, Layout, Animations) und ergänzt
+ * theme-eigene Komponenten + Overrides darüber.
  */
 
-@use 'abstracts/variables';
-@use 'abstracts/mixins';
-@use 'base/reset';
-@use 'base/typography';
+// 1. Core-Defaults
+@use '../../core/src/scss/main';
+
+// 2. Theme-Komponenten
 @use 'base/helper';
-@use 'base/layout';
+@use 'components/buttons';
 @use 'components/header';
 @use 'components/hero';
-@use 'components/buttons';
 @use 'components/forms';
 @use 'components/services';
 @use 'components/card';
@@ -22,3 +23,6 @@
 @use 'components/value';
 @use 'components/text-medien';
 @use 'components/cookie';
+
+// 3. Project-Overrides (last → wins)
+@use 'base/layout';

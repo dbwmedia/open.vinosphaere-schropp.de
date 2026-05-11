@@ -1,55 +1,12 @@
 /**
- * Mixins
- * Reusable SCSS mixins
+ * Theme Mixins
+ *
+ * Reicht alle Core-Mixins durch (respond-to, focus-visible,
+ * prefers-reduced-motion, visually-hidden) und reserviert darunter Platz
+ * für theme-eigene Mixins.
+ *
+ * Auflösung: Sass loadPath listet src/scss/ vor core/src/scss/, deshalb
+ * resolved jedes `@use 'abstracts/mixins' as *` ab jetzt auf DIESE Datei.
  */
 
-@use 'variables' as *;
-
-// Media Queries
-@mixin respond-to($breakpoint) {
-  @if $breakpoint == 'sm' {
-    @media (min-width: $breakpoint-sm) {
-      @content;
-    }
-  } @else if $breakpoint == 'md' {
-    @media (min-width: $breakpoint-md) {
-      @content;
-    }
-  } @else if $breakpoint == 'lg' {
-    @media (min-width: $breakpoint-lg) {
-      @content;
-    }
-  } @else if $breakpoint == 'xl' {
-    @media (min-width: $breakpoint-xl) {
-      @content;
-    }
-  }
-}
-
-// Focus Styles
-@mixin focus-visible {
-  &:focus-visible {
-    outline: 2px solid $color-focus;
-    outline-offset: 2px;
-  }
-}
-
-// Reduced Motion
-@mixin prefers-reduced-motion {
-  @media (prefers-reduced-motion: reduce) {
-    @content;
-  }
-}
-
-// Visually Hidden (Accessible)
-@mixin visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
+@forward '../../../core/src/scss/abstracts/mixins';

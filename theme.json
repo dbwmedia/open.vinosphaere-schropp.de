@@ -69,7 +69,19 @@
       ]
     },
     "typography": {
-      "customFontSize": false
+      "customFontSize": false,
+      "fontFamilies": [
+        {
+          "fontFamily": "\"Cormorant Garamond\", serif",
+          "name": "Cormorant Garamond (Headings)",
+          "slug": "serif-heading"
+        },
+        {
+          "fontFamily": "\"DM Sans\", sans-serif",
+          "name": "DM Sans (Body text)",
+          "slug": "system-body"
+        }
+      ]
     },
     "layout": {
       "contentSize": "800px",
@@ -86,10 +98,16 @@
       "background": "var(--wp--preset--color--base-bg)",
       "text": "var(--wp--preset--color--dark-grey)"
     },
+    "typography": {
+      "fontFamily": "var(--wp--preset--font-family--system-body)"
+    },
     "elements": {
       "heading": {
         "color": {
           "text": "var(--wp--preset--color--primary)"
+        },
+        "typography": {
+          "fontFamily": "var(--wp--preset--font-family--serif-heading)"
         }
       },
       "link": {
@@ -106,6 +124,9 @@
         "color": {
           "background": "var(--wp--preset--color--primary)",
           "text": "#ffffff"
+        },
+        "typography": {
+          "fontFamily": "var(--wp--preset--font-family--system-body)"
         }
       }
     }
